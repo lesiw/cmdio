@@ -8,13 +8,13 @@ import (
 	"lesiw.io/cmdio"
 )
 
-var defaultNS = cmdio.NewNS(&cmdNS{})
+var defaultBox = cmdio.NewBox(&cmdNS{})
 
 type cmdNS struct {
 	env map[string]string
 }
 
-func (ns *cmdNS) CommandContext(
+func (ns *cmdNS) Command(
 	ctx context.Context, args ...string,
 ) io.ReadWriter {
 	s := &cmd{
@@ -40,34 +40,34 @@ func (ns *cmdNS) Setenv(k, v string) {
 	ns.env[k] = v
 }
 
-func Env(env map[string]string) *cmdio.NS {
+func Env(env map[string]string) *cmdio.Box {
 	n := new(cmdNS)
 	for k, v := range env {
 		n.Setenv(k, v)
 	}
-	return cmdio.NewNS(n)
+	return cmdio.NewBox(n)
 }
 
 func Run(args ...string) error {
-	return defaultNS.Run(args...)
+	return defaultBox.Run(args...)
 }
 
 func MustRun(args ...string) {
-	defaultNS.MustRun(args...)
+	defaultBox.MustRun(args...)
 }
 
 func Check(args ...string) (*cmdio.CmdResult, error) {
-	return defaultNS.Check(args...)
+	return defaultBox.Check(args...)
 }
 
 func MustCheck(args ...string) *cmdio.CmdResult {
-	return defaultNS.MustCheck(args...)
+	return defaultBox.MustCheck(args...)
 }
 
 func Get(args ...string) (*cmdio.CmdResult, error) {
-	return defaultNS.Get(args...)
+	return defaultBox.Get(args...)
 }
 
 func MustGet(args ...string) *cmdio.CmdResult {
-	return defaultNS.MustGet(args...)
+	return defaultBox.MustGet(args...)
 }

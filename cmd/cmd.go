@@ -15,11 +15,11 @@ import (
 )
 
 func Command(args ...string) io.ReadWriter {
-	return defaultNS.Command(args...)
+	return defaultBox.Command(args...)
 }
 
 func CommandContext(ctx context.Context, args ...string) io.ReadWriter {
-	return defaultNS.CommandContext(ctx, args...)
+	return defaultBox.CommandContext(ctx, args...)
 }
 
 type cmd struct {
