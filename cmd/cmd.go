@@ -18,10 +18,6 @@ func Command(args ...string) io.ReadWriter {
 	return defaultBox.Command(args...)
 }
 
-func CommandContext(ctx context.Context, args ...string) io.ReadWriter {
-	return defaultBox.CommandContext(ctx, args...)
-}
-
 type cmd struct {
 	ctx context.Context
 	cmd *exec.Cmd

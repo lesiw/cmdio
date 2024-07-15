@@ -17,7 +17,7 @@ func Recover(w io.Writer) {
 			panic(r)
 		}
 		if ce := new(Error); errors.As(err, &ce) {
-			fmt.Fprintf(w, "exec failed: %v: %s\n", ce.cmd, ce.Error())
+			fmt.Fprintf(w, "exec failed: %v: %s\n", ce.Cmd, ce.Error())
 			if ce.Log != "" {
 				fmt.Fprintf(w, "\nstderr:\n---\n%s\n---\n", ce.Log)
 			}

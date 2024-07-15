@@ -6,19 +6,6 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-type CopyError struct {
-	err    error
-	Reader io.Reader
-}
-
-func (e *CopyError) Error() string {
-	return e.err.Error()
-}
-
-func (e *CopyError) Unwrap() error {
-	return e.err
-}
-
 func Copy(
 	dst io.Writer, src io.Reader, mid ...io.ReadWriter,
 ) (written int64, err error) {
@@ -62,7 +49,7 @@ func Copy(
 		})
 	}
 	if err := g.Wait(); err != nil {
-		return 0, &CopyError{err, r}
+		return 0, err
 	}
 	close(count)
 	return <-total, nil

@@ -2,7 +2,6 @@
 package cmdio
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -24,7 +23,7 @@ type AttachReadWriter interface {
 	Attach() error
 }
 
-// Run attaches a stream to the controlling terminal and executes it.
+// Run attaches a command to the controlling terminal and executes it.
 func Run(s AttachReadWriter) error {
 	fmt.Fprintln(Trace, "+", s)
 	if err := s.Attach(); err != nil {
@@ -36,33 +35,7 @@ func Run(s AttachReadWriter) error {
 	return nil
 }
 
-// Check executes a stream, capturing its output.
-// If the command runs and exits non-zero, it will not return an error.
-// If the command fails to run, however, it will return an error.
-func Check(s io.ReadWriter) (*CmdResult, error) {
-	fmt.Fprintln(Trace, "+", s)
-	buf, err := io.ReadAll(s)
-	r := &CmdResult{
-		Cmd:    s,
-		Output: strings.Trim(string(buf), "\n"),
-	}
-	if err != nil {
-		se := new(Error)
-		if errors.As(err, &se) {
-			if se.Code > 0 {
-				r.Code = se.Code
-				return r, nil
-			}
-			return nil, se
-		} else {
-			return nil, NewError(err, s)
-		}
-	}
-	r.Ok = true
-	return r, nil
-}
-
-// Get executes a stream and captures its output.
+// Get executes a command and captures its output.
 func Get(s io.ReadWriter) (*CmdResult, error) {
 	fmt.Fprintln(Trace, "+", s)
 	buf, err := io.ReadAll(s)
@@ -70,7 +43,6 @@ func Get(s io.ReadWriter) (*CmdResult, error) {
 		return nil, err
 	}
 	r := &CmdResult{
-		Ok:     true,
 		Cmd:    s,
 		Output: strings.Trim(string(buf), "\n"),
 	}

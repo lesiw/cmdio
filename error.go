@@ -6,7 +6,7 @@ import "io"
 // with [Recover].
 type Error struct {
 	err  error
-	cmd  io.ReadWriter
+	Cmd  io.ReadWriter
 	Code int
 	Log  string
 }
@@ -15,7 +15,7 @@ func NewError(err error, cmd io.ReadWriter) error {
 	if err == nil {
 		return nil
 	}
-	return &Error{err: err, cmd: cmd}
+	return &Error{err: err, Cmd: cmd}
 }
 
 func (e *Error) Error() string {

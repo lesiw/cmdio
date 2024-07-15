@@ -8,40 +8,40 @@ import (
 	"lesiw.io/cmdio"
 )
 
-var defaultBox = cmdio.NewBox(&cmdNS{})
+var defaultBox = cmdio.NewBox(&cmdBox{})
 
-type cmdNS struct {
+type cmdBox struct {
 	env map[string]string
 }
 
-func (ns *cmdNS) Command(
+func (b *cmdBox) Command(
 	ctx context.Context, args ...string,
 ) io.ReadWriter {
 	s := &cmd{
 		ctx: ctx,
 		cmd: exec.CommandContext(ctx, args[0], args[1:]...),
-		env: ns.env,
+		env: b.env,
 	}
 	s.init()
 	return s
 }
 
-func (ns *cmdNS) Env(k string) string {
-	if ns.env == nil {
+func (b *cmdBox) Env(k string) string {
+	if b.env == nil {
 		return ""
 	}
-	return ns.env[k]
+	return b.env[k]
 }
 
-func (ns *cmdNS) Setenv(k, v string) {
-	if ns.env == nil {
-		ns.env = make(map[string]string)
+func (b *cmdBox) Setenv(k, v string) {
+	if b.env == nil {
+		b.env = make(map[string]string)
 	}
-	ns.env[k] = v
+	b.env[k] = v
 }
 
 func Env(env map[string]string) *cmdio.Box {
-	n := new(cmdNS)
+	n := new(cmdBox)
 	for k, v := range env {
 		n.Setenv(k, v)
 	}
@@ -54,14 +54,6 @@ func Run(args ...string) error {
 
 func MustRun(args ...string) {
 	defaultBox.MustRun(args...)
-}
-
-func Check(args ...string) (*cmdio.CmdResult, error) {
-	return defaultBox.Check(args...)
-}
-
-func MustCheck(args ...string) *cmdio.CmdResult {
-	return defaultBox.MustCheck(args...)
 }
 
 func Get(args ...string) (*cmdio.CmdResult, error) {
