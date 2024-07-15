@@ -2,7 +2,6 @@ package cmdio
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -37,11 +36,7 @@ func GetPipe(src io.Reader, cmds ...io.ReadWriter) (*CmdResult, error) {
 	r := new(CmdResult)
 	dst := new(bytes.Buffer)
 	if _, err := Copy(dst, src, cmds...); err != nil {
-		if ce := new(Error); errors.As(err, &ce) {
-			return nil, ce
-		} else {
-			return nil, err
-		}
+		return nil, err
 	}
 	r.Output = strings.Trim(dst.String(), "\n")
 	if s, ok := cmds[len(cmds)-1].(io.ReadWriter); ok {
