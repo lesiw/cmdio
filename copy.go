@@ -36,14 +36,19 @@ func Copy(
 		}
 		w := w
 		r := r
-		g.Go(func() error {
+		g.Go(func() (err error) {
+			defer func() {
+				if c, ok := w.(io.Closer); ok {
+					err1 := c.Close()
+					if err == nil {
+						err = err1
+					}
+				}
+			}()
 			if n, err := io.Copy(w, r); err != nil {
 				return err
 			} else {
 				count <- n
-			}
-			if c, ok := w.(io.Closer); ok {
-				return c.Close()
 			}
 			return nil
 		})

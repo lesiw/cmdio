@@ -4,6 +4,7 @@ import (
 	"cmp"
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"os/exec"
@@ -64,14 +65,21 @@ func (c *cmd) Write(bytes []byte) (int, error) {
 	if c.writer == nil {
 		return 0, nil
 	}
-	return c.writer.Write(bytes)
+	n, err := c.writer.Write(bytes)
+	if err != nil {
+		return n, cmdio.NewError(fmt.Errorf(`failed write: %w`, err), c)
+	}
+	return n, nil
 }
 
 func (c *cmd) Close() error {
 	if c.writer == nil {
 		return nil
 	}
-	return c.writer.Close()
+	if err := c.writer.Close(); err != nil {
+		return cmdio.NewError(fmt.Errorf(`failed close: %w`, err), c)
+	}
+	return nil
 }
 
 func (c *cmd) Read(bytes []byte) (int, error) {
