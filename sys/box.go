@@ -1,4 +1,4 @@
-package cmd
+package sys
 
 import (
 	"context"
@@ -8,13 +8,13 @@ import (
 	"lesiw.io/cmdio"
 )
 
-var defaultBox = cmdio.NewBox(&cmdBox{})
+var defaultBox = cmdio.NewBox(&sysbox{})
 
-type cmdBox struct {
+type sysbox struct {
 	env map[string]string
 }
 
-func (b *cmdBox) Command(
+func (b *sysbox) Command(
 	ctx context.Context, args ...string,
 ) io.ReadWriter {
 	s := &cmd{
@@ -26,14 +26,14 @@ func (b *cmdBox) Command(
 	return s
 }
 
-func (b *cmdBox) Env(k string) string {
+func (b *sysbox) Env(k string) string {
 	if b.env == nil {
 		return ""
 	}
 	return b.env[k]
 }
 
-func (b *cmdBox) Setenv(k, v string) {
+func (b *sysbox) Setenv(k, v string) {
 	if b.env == nil {
 		b.env = make(map[string]string)
 	}
@@ -41,7 +41,7 @@ func (b *cmdBox) Setenv(k, v string) {
 }
 
 func Env(env map[string]string) *cmdio.Box {
-	n := new(cmdBox)
+	n := new(sysbox)
 	for k, v := range env {
 		n.Setenv(k, v)
 	}
