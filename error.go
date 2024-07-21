@@ -1,6 +1,9 @@
 package cmdio
 
-import "io"
+import (
+	"fmt"
+	"io"
+)
 
 // Error describes an error produced by the cmdio package that can be recovered
 // with [Recover].
@@ -20,6 +23,13 @@ func NewError(err error, cmd io.ReadWriter) error {
 
 func (e *Error) Error() string {
 	return e.err.Error()
+}
+
+func (e *Error) Print(w io.Writer) {
+	fmt.Fprintf(w, "exec failed: %v: %s\n", e.Cmd, e.Error())
+	if e.Log != "" {
+		fmt.Fprintf(w, "\nstderr:\n---\n%s\n---\n", e.Log)
+	}
 }
 
 func (e *Error) Unwrap() error {

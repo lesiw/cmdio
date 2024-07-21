@@ -2,7 +2,6 @@ package cmdio
 
 import (
 	"errors"
-	"fmt"
 	"io"
 	"os"
 )
@@ -11,19 +10,18 @@ import (
 // package. It is meant to be used in conjunction with Must calls to facilitate
 // script-like code.
 func Recover(w io.Writer) {
-	if r := recover(); r != nil {
-		err, ok := r.(error)
-		if !ok {
-			panic(r)
-		}
-		if ce := new(Error); errors.As(err, &ce) {
-			fmt.Fprintf(w, "exec failed: %v: %s\n", ce.Cmd, ce.Error())
-			if ce.Log != "" {
-				fmt.Fprintf(w, "\nstderr:\n---\n%s\n---\n", ce.Log)
-			}
-		} else {
-			panic(err)
-		}
+	r := recover()
+	if r == nil {
+		return
+	}
+	err, ok := r.(error)
+	if !ok {
+		panic(r)
+	}
+	if ce := new(Error); errors.As(err, &ce) {
+		ce.Print(w)
 		os.Exit(1)
+	} else {
+		panic(err)
 	}
 }
