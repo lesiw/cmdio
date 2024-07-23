@@ -44,14 +44,22 @@ func (b *sysbox) Setenv(k, v string) {
 }
 
 func Env(env map[string]string) *cmdio.Box {
-	return WithEnv(new(sysbox), env)
+	c := new(sysbox)
+	for k, v := range env {
+		c.Setenv(k, v)
+	}
+	return cmdio.NewBox(c)
 }
 
-func WithEnv(b Enver, env map[string]string) *cmdio.Box {
-	for k, v := range env {
-		b.Setenv(k, v)
+func WithEnv(b *cmdio.Box, env map[string]string) *cmdio.Box {
+	c, ok := b.Commander.(Enver)
+	if !ok {
+		panic("bad Commander: not an Enver")
 	}
-	return cmdio.NewBox(b.(cmdio.Commander))
+	for k, v := range env {
+		c.Setenv(k, v)
+	}
+	return cmdio.NewBox(c.(cmdio.Commander))
 }
 
 func Run(args ...string) error {
