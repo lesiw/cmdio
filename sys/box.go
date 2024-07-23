@@ -43,6 +43,10 @@ func (b *sysbox) Setenv(k, v string) {
 	b.env[k] = v
 }
 
+func Box() *cmdio.Box {
+	return cmdio.NewBox(new(sysbox))
+}
+
 func Env(env map[string]string) *cmdio.Box {
 	c := new(sysbox)
 	for k, v := range env {
