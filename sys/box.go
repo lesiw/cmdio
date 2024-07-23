@@ -14,9 +14,12 @@ type sysbox struct {
 	env map[string]string
 }
 
-func (b *sysbox) Command(
-	ctx context.Context, args ...string,
-) io.ReadWriter {
+type Enver interface {
+	Env(string) string
+	Setenv(string, string)
+}
+
+func (b *sysbox) Command(ctx context.Context, args ...string) io.ReadWriter {
 	s := &cmd{
 		ctx: ctx,
 		cmd: exec.CommandContext(ctx, args[0], args[1:]...),
@@ -41,11 +44,14 @@ func (b *sysbox) Setenv(k, v string) {
 }
 
 func Env(env map[string]string) *cmdio.Box {
-	n := new(sysbox)
+	return WithEnv(new(sysbox), env)
+}
+
+func WithEnv(b Enver, env map[string]string) *cmdio.Box {
 	for k, v := range env {
-		n.Setenv(k, v)
+		b.Setenv(k, v)
 	}
-	return cmdio.NewBox(n)
+	return cmdio.NewBox(b.(cmdio.Commander))
 }
 
 func Run(args ...string) error {
