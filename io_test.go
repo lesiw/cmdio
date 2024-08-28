@@ -13,9 +13,9 @@ import (
 )
 
 func TestRun(t *testing.T) {
-	swap(t, &Trace, io.Discard)
-	outbuf := new(bytes.Buffer)
+	outbuf, errbuf := new(bytes.Buffer), new(bytes.Buffer)
 	swap[io.Writer](t, &Stdout, outbuf)
+	swap[io.Writer](t, &Trace.(*prefixWriter).w, errbuf)
 	cmd := bytes.NewBufferString("hello world")
 
 	err := Run(cmd)
@@ -25,6 +25,9 @@ func TestRun(t *testing.T) {
 	}
 	if got, want := outbuf.String(), "hello world"; got != want {
 		t.Errorf("Run(%q) stdout = %q, want %q", cmd, got, want)
+	}
+	if got, want := errbuf.String(), "+ hello world\n"; got != want {
+		t.Errorf("Run(%q) stderr = %q, want %q", cmd, got, want)
 	}
 	// Ensure nothing was written to cmd after being read.
 	if got, want := cmd.String(), ""; got != want {
@@ -156,9 +159,9 @@ func TestRunAttacherReadError(t *testing.T) {
 }
 
 func TestGet(t *testing.T) {
-	swap(t, &Trace, io.Discard)
-	outbuf := new(bytes.Buffer)
+	outbuf, errbuf := new(bytes.Buffer), new(bytes.Buffer)
 	swap[io.Writer](t, &Stdout, outbuf)
+	swap[io.Writer](t, &Trace.(*prefixWriter).w, errbuf)
 	cmd := bytes.NewBufferString("hello world")
 
 	r, err := Get(cmd)
@@ -171,6 +174,9 @@ func TestGet(t *testing.T) {
 	}
 	if got, want := outbuf.String(), ""; got != want {
 		t.Errorf("Get(%q) stdout = %q, want %q", cmd, got, want)
+	}
+	if got, want := errbuf.String(), "+ hello world\n"; got != want {
+		t.Errorf("Run(%q) stderr = %q, want %q", cmd, got, want)
 	}
 	// Ensure nothing was written to cmd after being read.
 	if got, want := cmd.String(), ""; got != want {

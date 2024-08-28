@@ -27,7 +27,7 @@ type Attacher interface {
 
 // Run attaches a command to the controlling terminal and executes it.
 func Run(cmd io.Reader) error {
-	fmt.Fprintln(Trace, "+", cmd)
+	fmt.Fprintln(Trace, cmd)
 	a, ok := cmd.(Attacher)
 	if !ok {
 		// If this command does not implement Attacher, stream it to stdout.
@@ -43,7 +43,7 @@ func Run(cmd io.Reader) error {
 
 // Get executes a command and captures its output.
 func Get(cmd io.Reader) (*CmdResult, error) {
-	fmt.Fprintln(Trace, "+", cmd)
+	fmt.Fprintln(Trace, cmd)
 	buf, err := io.ReadAll(cmd)
 	if err != nil {
 		return nil, err

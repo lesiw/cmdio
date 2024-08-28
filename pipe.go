@@ -53,7 +53,6 @@ func MustGetPipe(src io.Reader, cmds ...io.ReadWriter) *CmdResult {
 }
 
 func printCmds(a ...any) {
-	fmt.Fprintf(Trace, "+ ")
 	for i, e := range a {
 		if i > 0 {
 			fmt.Fprintf(Trace, " | ")
