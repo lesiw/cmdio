@@ -32,13 +32,13 @@ func Run(cmd io.Reader) error {
 	if !ok {
 		// If this command does not implement Attacher, stream it to stdout.
 		_, err := io.Copy(Stdout, cmd)
-		return NewError(err, cmd)
+		return NewError(err, readWriter(cmd))
 	}
 	if err := a.Attach(); err != nil {
 		return err
 	}
 	_, err := cmd.Read(nil)
-	return NewError(err, cmd)
+	return NewError(err, readWriter(cmd))
 }
 
 // Get executes a command and captures its output.
@@ -49,7 +49,7 @@ func Get(cmd io.Reader) (*CmdResult, error) {
 		return nil, err
 	}
 	r := &CmdResult{
-		Cmd:    cmd,
+		Cmd:    readWriter(cmd),
 		Output: strings.Trim(string(buf), "\n"),
 	}
 	return r, nil

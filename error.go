@@ -9,12 +9,12 @@ import (
 // with [Recover].
 type Error struct {
 	err  error
-	Cmd  any
+	Cmd  io.ReadWriter
 	Code int
 	Log  string
 }
 
-func NewError(err error, cmd any) error {
+func NewError(err error, cmd io.ReadWriter) error {
 	if err == nil {
 		return nil
 	}
