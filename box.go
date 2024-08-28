@@ -34,7 +34,7 @@ func (b *Box) Command(args ...string) io.ReadWriter {
 
 // Run runs a command.
 func (b *Box) Run(args ...string) error {
-	return Run(b.Command(args...).(AttachReadWriter))
+	return Run(b.Command(args...))
 }
 
 // MustRun runs a command and panics on failure.
