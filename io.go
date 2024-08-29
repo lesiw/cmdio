@@ -2,11 +2,12 @@
 package cmdio
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"os"
 	"strings"
+
+	"golang.org/x/sync/errgroup"
 )
 
 var (
@@ -68,23 +69,35 @@ func Get(cmd io.Reader) (*Result, error) {
 	fmt.Fprintln(Trace, cmd)
 
 	r := new(Result)
-	var errs []error
+	var wg errgroup.Group
+	out := make(chan string)
+	log := make(chan string)
 
-	buf, err := io.ReadAll(cmd)
-	if err != nil {
-		errs = append(errs, err)
-	}
-	r.Cmd = readWriter(cmd)
-	r.Out = strings.Trim(string(buf), "\n")
 	if l, ok := cmd.(Logger); ok {
-		logbuf, err := io.ReadAll(l.Log())
-		if err != nil {
-			errs = append(errs, fmt.Errorf("failed to read cmd log: %w", err))
-		}
-		r.Log = strings.Trim(string(logbuf), "\n")
+		wg.Go(func() error {
+			buf, err := io.ReadAll(l.Log())
+			log <- strings.Trim(string(buf), "\n")
+			if err != nil {
+				return fmt.Errorf("failed to read cmd log: %w", err)
+			}
+			return nil
+		})
+	} else {
+		close(out)
 	}
+	wg.Go(func() error {
+		buf, err := io.ReadAll(cmd)
+		out <- strings.Trim(string(buf), "\n")
+		return err
+	})
+
+	r.Cmd = readWriter(cmd)
+	r.Out = <-out
+	r.Log = <-log
+	err := wg.Wait()
 	if c, ok := cmd.(Coder); ok {
 		r.Code = c.Code()
 	}
-	return r, errors.Join(errs...)
+
+	return r, err
 }

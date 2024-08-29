@@ -1,7 +1,6 @@
 package sys
 
 import (
-	"bytes"
 	"cmp"
 	"context"
 	"errors"
@@ -23,9 +22,10 @@ func Command(args ...string) io.ReadWriter {
 type cmd struct {
 	ctx  context.Context
 	cmd  *exec.Cmd
-	log  []byte
 	env  map[string]string
 	code int
+
+	cmdwait chan error
 
 	start func() error
 	wait  func() error
@@ -33,6 +33,10 @@ type cmd struct {
 	writer io.WriteCloser
 	reader io.ReadCloser
 	logger io.ReadCloser
+
+	logready chan struct{}
+
+	closers []io.Closer
 }
 
 func (c *cmd) Attach() error {
@@ -49,25 +53,47 @@ func (c *cmd) init() {
 	}
 	c.start = sync.OnceValue(c._start)
 	c.wait = sync.OnceValue(c._wait)
+	c.cmdwait = make(chan error)
+	c.logready = make(chan struct{})
 }
 
-func (c *cmd) _start() (err error) {
+func (c *cmd) _start() error {
 	if c.cmd.Stdin == nil {
-		if c.writer, err = c.cmd.StdinPipe(); err != nil {
+		w, err := c.cmd.StdinPipe()
+		if err != nil {
 			return fmt.Errorf("failed to pipe stdin: %w", err)
 		}
+		c.writer = w
 	}
 	if c.cmd.Stdout == nil {
-		if c.reader, err = c.cmd.StdoutPipe(); err != nil {
-			return fmt.Errorf("failed to pipe stdout: %w", err)
-		}
+		r, w := io.Pipe()
+		c.reader = r
+		c.cmd.Stdout = w
+		c.closers = append(c.closers, w)
 	}
 	if c.cmd.Stderr == nil {
-		if c.logger, err = c.cmd.StderrPipe(); err != nil {
-			return fmt.Errorf("failed to pipe stderr: %w", err)
-		}
+		r, w := io.Pipe()
+		c.logger = r
+		c.cmd.Stderr = w
+		c.closers = append(c.closers, w)
+		close(c.logready)
 	}
-	return cmdio.NewError(c.cmd.Start(), c)
+	if err := c.cmd.Start(); err != nil {
+		for _, cl := range c.closers {
+			_ = cl.Close() // Best effort.
+		}
+		return cmdio.NewError(err, c)
+	}
+	go func() {
+		err := c.cmd.Wait()
+		for _, cl := range c.closers {
+			if err1 := cl.Close(); err == nil {
+				err = err1
+			}
+		}
+		c.cmdwait <- err
+	}()
+	return nil
 }
 
 func (c *cmd) Write(bytes []byte) (int, error) {
@@ -129,7 +155,8 @@ skipread:
 }
 
 func (c *cmd) Log() io.Reader {
-	return bytes.NewReader(c.log)
+	<-c.logready
+	return c.logger
 }
 
 func (c *cmd) Code() int {
@@ -137,19 +164,8 @@ func (c *cmd) Code() int {
 }
 
 func (c *cmd) _wait() error {
-	if c.logger != nil {
-		buf, err := io.ReadAll(c.logger)
-		if err != nil {
-			return fmt.Errorf("failed to read stderr: %w", err)
-		}
-		c.log = buf
-	}
-	err := c.cmd.Wait() // Closes pipes.
-	if err == nil {
-		return nil
-	}
-	ee := new(exec.ExitError)
-	if errors.As(err, &ee) {
+	err := <-c.cmdwait
+	if ee := new(exec.ExitError); errors.As(err, &ee) {
 		c.code = ee.ExitCode()
 	}
 	return cmdio.NewError(err, c)
