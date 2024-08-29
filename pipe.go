@@ -39,8 +39,16 @@ func GetPipe(src io.Reader, cmds ...io.ReadWriter) (*Result, error) {
 		return nil, err
 	}
 	r.Out = strings.Trim(dst.String(), "\n")
-	if s, ok := cmds[len(cmds)-1].(io.ReadWriter); ok {
-		r.Cmd = s
+	r.Cmd = cmds[len(cmds)-1]
+	if l, ok := r.Cmd.(Logger); ok {
+		logbuf, err := io.ReadAll(l.Log())
+		if err != nil {
+			return nil, fmt.Errorf("read from cmd log failed: %w", err)
+		}
+		r.Log = strings.Trim(string(logbuf), "\n")
+	}
+	if c, ok := r.Cmd.(Coder); ok {
+		r.Code = c.Code()
 	}
 	return r, nil
 }

@@ -62,5 +62,18 @@ func Get(cmd io.Reader) (*Result, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Result{readWriter(cmd), strings.Trim(string(buf), "\n")}, nil
+	r := new(Result)
+	r.Cmd = readWriter(cmd)
+	r.Out = strings.Trim(string(buf), "\n")
+	if l, ok := cmd.(Logger); ok {
+		logbuf, err := io.ReadAll(l.Log())
+		if err != nil {
+			return nil, fmt.Errorf("read from cmd log failed: %w", err)
+		}
+		r.Log = strings.Trim(string(logbuf), "\n")
+	}
+	if c, ok := cmd.(Coder); ok {
+		r.Code = c.Code()
+	}
+	return r, nil
 }
