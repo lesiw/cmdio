@@ -42,14 +42,14 @@ func (b *Box) MustRun(args ...string) {
 	must(b.Run(args...))
 }
 
-// Get runs a command and captures its output in a [CmdResult].
-func (b *Box) Get(args ...string) (*CmdResult, error) {
+// Get runs a command and captures its output in a [Result].
+func (b *Box) Get(args ...string) (*Result, error) {
 	return Get(b.Command(args...))
 }
 
-// MustGet runs a command and captures its output in a [CmdResult].
+// MustGet runs a command and captures its output in a [Result].
 // It panics if the command fails.
-func (b *Box) MustGet(args ...string) *CmdResult {
+func (b *Box) MustGet(args ...string) *Result {
 	return must1(b.Get(args...))
 }
 

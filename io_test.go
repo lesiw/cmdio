@@ -165,7 +165,7 @@ func TestGet(t *testing.T) {
 
 	r, err := Get(cmd)
 
-	checkEqual(t, fmt.Sprintf("Get(%q).CmdResult", cmd), r, &CmdResult{
+	checkEqual(t, fmt.Sprintf("Get(%q).CmdResult", cmd), r, &Result{
 		cmd, "hello world",
 	})
 	if err != nil {

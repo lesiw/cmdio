@@ -58,10 +58,10 @@ func MustRun(args ...string) {
 	defaultBox.MustRun(args...)
 }
 
-func Get(args ...string) (*cmdio.CmdResult, error) {
+func Get(args ...string) (*cmdio.Result, error) {
 	return defaultBox.Get(args...)
 }
 
-func MustGet(args ...string) *cmdio.CmdResult {
+func MustGet(args ...string) *cmdio.Result {
 	return defaultBox.MustGet(args...)
 }

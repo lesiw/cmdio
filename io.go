@@ -56,11 +56,11 @@ func Run(cmd io.Reader) error {
 }
 
 // Get executes a command and captures its output.
-func Get(cmd io.Reader) (*CmdResult, error) {
+func Get(cmd io.Reader) (*Result, error) {
 	fmt.Fprintln(Trace, cmd)
 	buf, err := io.ReadAll(cmd)
 	if err != nil {
 		return nil, err
 	}
-	return &CmdResult{readWriter(cmd), strings.Trim(string(buf), "\n")}, nil
+	return &Result{readWriter(cmd), strings.Trim(string(buf), "\n")}, nil
 }

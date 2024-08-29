@@ -2,8 +2,8 @@ package cmdio
 
 import "io"
 
-// CmdResult describes the results of a completed read from an [io.ReadWriter].
-type CmdResult struct {
+// Result describes a completed read from an [io.ReadWriter].
+type Result struct {
 	Cmd io.ReadWriter
 	Out string
 }

@@ -25,15 +25,15 @@ func MustPipe(src io.Reader, cmds ...io.ReadWriter) {
 	must(Pipe(src, cmds...))
 }
 
-// GetPipe chains commands together and captures the output in a [CmdResult].
-func GetPipe(src io.Reader, cmds ...io.ReadWriter) (*CmdResult, error) {
+// GetPipe chains commands together and captures the output in a [Result].
+func GetPipe(src io.Reader, cmds ...io.ReadWriter) (*Result, error) {
 	all := make([]any, len(cmds)+1)
 	all[0] = src
 	for i, s := range cmds {
 		all[i+1] = s
 	}
 	printCmds(all...)
-	r := new(CmdResult)
+	r := new(Result)
 	dst := new(bytes.Buffer)
 	if _, err := Copy(dst, src, cmds...); err != nil {
 		return nil, err
@@ -45,10 +45,9 @@ func GetPipe(src io.Reader, cmds ...io.ReadWriter) (*CmdResult, error) {
 	return r, nil
 }
 
-// MustGetPipe chains commands together and captures the output in a
-// [CmdResult].
+// MustGetPipe chains commands together and captures the output in a [Result].
 // It panics if any of the commands fail.
-func MustGetPipe(src io.Reader, cmds ...io.ReadWriter) *CmdResult {
+func MustGetPipe(src io.Reader, cmds ...io.ReadWriter) *Result {
 	return must1(GetPipe(src, cmds...))
 }
 
