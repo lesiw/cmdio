@@ -67,7 +67,7 @@ func printCmds(a ...any) {
 		if str, ok := e.(fmt.Stringer); ok {
 			fmt.Fprintf(Trace, str.String())
 		} else {
-			fmt.Fprintf(Trace, "<stream>")
+			fmt.Fprintf(Trace, "<%T>", e)
 		}
 	}
 	fmt.Fprintln(Trace)
