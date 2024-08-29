@@ -17,7 +17,17 @@ var (
 // To disable, set this variable to [io.Discard].
 var Trace io.Writer = newPrefixWriter("+ ", Stderr)
 
-// An attacher can be connected directly to the controlling terminal.
+// A Logger has a readable log.
+type Logger interface {
+	Log() io.Reader
+}
+
+// A Coder has an exit code.
+type Coder interface {
+	Code() int
+}
+
+// An Attacher can be connected directly to the controlling terminal.
 // An attached stream cannot be written to.
 // It must be readable exactly once, during which time the read must block for
 // the duration of the command, then exit with 0 bytes read.
@@ -30,7 +40,11 @@ func Run(cmd io.Reader) error {
 	fmt.Fprintln(Trace, cmd)
 	a, ok := cmd.(Attacher)
 	if !ok {
-		// If this command does not implement Attacher, stream it to stdout.
+		// If this command does not implement Attacher, stream it to stdout
+		// (and stderr, if applicable).
+		if l, ok := cmd.(Logger); ok {
+			go io.Copy(Stderr, l.Log())
+		}
 		_, err := io.Copy(Stdout, cmd)
 		return NewError(err, readWriter(cmd))
 	}
@@ -48,9 +62,5 @@ func Get(cmd io.Reader) (*CmdResult, error) {
 	if err != nil {
 		return nil, err
 	}
-	r := &CmdResult{
-		Cmd:    readWriter(cmd),
-		Output: strings.Trim(string(buf), "\n"),
-	}
-	return r, nil
+	return &CmdResult{readWriter(cmd), strings.Trim(string(buf), "\n")}, nil
 }

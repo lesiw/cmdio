@@ -38,7 +38,7 @@ func GetPipe(src io.Reader, cmds ...io.ReadWriter) (*CmdResult, error) {
 	if _, err := Copy(dst, src, cmds...); err != nil {
 		return nil, err
 	}
-	r.Output = strings.Trim(dst.String(), "\n")
+	r.Out = strings.Trim(dst.String(), "\n")
 	if s, ok := cmds[len(cmds)-1].(io.ReadWriter); ok {
 		r.Cmd = s
 	}

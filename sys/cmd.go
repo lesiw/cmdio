@@ -1,6 +1,7 @@
 package sys
 
 import (
+	"bytes"
 	"cmp"
 	"context"
 	"errors"
@@ -20,10 +21,11 @@ func Command(args ...string) io.ReadWriter {
 }
 
 type cmd struct {
-	ctx context.Context
-	cmd *exec.Cmd
-	log []byte
-	env map[string]string
+	ctx  context.Context
+	cmd  *exec.Cmd
+	log  []byte
+	env  map[string]string
+	code int
 
 	starter sync.Once
 	waiter  sync.Once
@@ -115,22 +117,27 @@ nilreader:
 	return n, err
 }
 
+func (c *cmd) Log() io.Reader {
+	return bytes.NewReader(c.log)
+}
+
+func (c *cmd) Code() int {
+	return c.code
+}
+
 func (c *cmd) wait() error {
-	var log []byte
 	if c.logger != nil {
-		log = must1(io.ReadAll(c.logger))
+		c.log = must1(io.ReadAll(c.logger))
 	}
 	err := c.cmd.Wait() // Closes pipes.
 	if err == nil {
 		return nil
 	}
 	ee := new(exec.ExitError)
-	ce := cmdio.NewError(err, c).(*cmdio.Error)
 	if errors.As(err, &ee) {
-		ce.Code = ee.ExitCode()
+		c.code = ee.ExitCode()
 	}
-	ce.Log = strings.TrimRight(string(log), "\n")
-	return ce
+	return cmdio.NewError(err, c)
 }
 
 func (c *cmd) String() string {

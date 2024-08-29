@@ -8,17 +8,15 @@ import (
 // Error describes an error produced by the cmdio package that can be recovered
 // with [Recover].
 type Error struct {
-	err  error
-	Cmd  io.ReadWriter
-	Code int
-	Log  string
+	err error
+	cmd io.ReadWriter
 }
 
 func NewError(err error, cmd io.ReadWriter) error {
 	if err == nil {
 		return nil
 	}
-	return &Error{err: err, Cmd: cmd}
+	return &Error{err, cmd}
 }
 
 func (e *Error) Error() string {
@@ -26,9 +24,13 @@ func (e *Error) Error() string {
 }
 
 func (e *Error) Print(w io.Writer) {
-	fmt.Fprintf(w, "exec failed: %v: %s\n", e.Cmd, e.Error())
-	if e.Log != "" {
-		fmt.Fprintf(w, "\nstderr:\n---\n%s\n---\n", e.Log)
+	fmt.Fprintf(w, "exec failed: %v: %s\n", e.cmd, e.Error())
+	if l, ok := e.cmd.(Logger); ok {
+		fmt.Fprintf(w, "\nlog:\n---\n")
+		if _, err := io.Copy(w, l.Log()); err != nil {
+			fmt.Fprintf(w, "--- error reading log: %s ---", err)
+		}
+		fmt.Fprintf(w, "\n---\n")
 	}
 }
 
