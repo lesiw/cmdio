@@ -2,6 +2,7 @@
 package cmdio
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -56,24 +57,30 @@ func Run(cmd io.Reader) error {
 }
 
 // Get executes a command and captures its output.
+// Result is never nil, even if error is not nil.
+// Checking Result.Code > 0 is not sufficient, as it will default to 0 even in
+// the presence of an error, such as a "command not found" error.
 func Get(cmd io.Reader) (*Result, error) {
 	fmt.Fprintln(Trace, cmd)
+
+	r := new(Result)
+	var errs []error
+
 	buf, err := io.ReadAll(cmd)
 	if err != nil {
-		return nil, err
+		errs = append(errs, err)
 	}
-	r := new(Result)
 	r.Cmd = readWriter(cmd)
 	r.Out = strings.Trim(string(buf), "\n")
 	if l, ok := cmd.(Logger); ok {
 		logbuf, err := io.ReadAll(l.Log())
 		if err != nil {
-			return nil, fmt.Errorf("read from cmd log failed: %w", err)
+			errs = append(errs, fmt.Errorf("failed to read cmd log: %w", err))
 		}
 		r.Log = strings.Trim(string(logbuf), "\n")
 	}
 	if c, ok := cmd.(Coder); ok {
 		r.Code = c.Code()
 	}
-	return r, nil
+	return r, errors.Join(errs...)
 }

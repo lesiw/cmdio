@@ -27,8 +27,8 @@ type cmd struct {
 	env  map[string]string
 	code int
 
-	starter sync.Once
-	waiter  sync.Once
+	start func() error
+	wait  func() error
 
 	writer io.WriteCloser
 	reader io.ReadCloser
@@ -47,23 +47,33 @@ func (c *cmd) init() {
 	for k, v := range c.env {
 		c.cmd.Env = append(c.cmd.Env, k+"="+v)
 	}
+	c.start = sync.OnceValue(c._start)
+	c.wait = sync.OnceValue(c._wait)
 }
 
-func (c *cmd) start() {
+func (c *cmd) _start() (err error) {
 	if c.cmd.Stdin == nil {
-		c.writer = must1(c.cmd.StdinPipe())
+		if c.writer, err = c.cmd.StdinPipe(); err != nil {
+			return fmt.Errorf("failed to pipe stdin: %w", err)
+		}
 	}
 	if c.cmd.Stdout == nil {
-		c.reader = must1(c.cmd.StdoutPipe())
+		if c.reader, err = c.cmd.StdoutPipe(); err != nil {
+			return fmt.Errorf("failed to pipe stdout: %w", err)
+		}
 	}
 	if c.cmd.Stderr == nil {
-		c.logger = must1(c.cmd.StderrPipe())
+		if c.logger, err = c.cmd.StderrPipe(); err != nil {
+			return fmt.Errorf("failed to pipe stderr: %w", err)
+		}
 	}
-	must(cmdio.NewError(c.cmd.Start(), c))
+	return cmdio.NewError(c.cmd.Start(), c)
 }
 
 func (c *cmd) Write(bytes []byte) (int, error) {
-	c.starter.Do(c.start)
+	if err := c.start(); err != nil {
+		return 0, err
+	}
 	if c.writer == nil {
 		return 0, nil
 	}
@@ -85,7 +95,9 @@ func (c *cmd) Close() error {
 }
 
 func (c *cmd) Read(bytes []byte) (int, error) {
-	c.starter.Do(c.start)
+	if err := c.start(); err != nil {
+		return 0, err
+	}
 	ch := make(chan ioret)
 	var n int
 	var err error
@@ -108,11 +120,9 @@ func (c *cmd) Read(bytes []byte) (int, error) {
 
 nilreader:
 	if err != nil || n == 0 {
-		c.waiter.Do(func() {
-			if err1 := c.wait(); err1 != nil {
-				err = err1
-			}
-		})
+		if err1 := c.wait(); err1 != nil {
+			err = err1
+		}
 	}
 	return n, err
 }
@@ -125,9 +135,13 @@ func (c *cmd) Code() int {
 	return c.code
 }
 
-func (c *cmd) wait() error {
+func (c *cmd) _wait() error {
 	if c.logger != nil {
-		c.log = must1(io.ReadAll(c.logger))
+		buf, err := io.ReadAll(c.logger)
+		if err != nil {
+			return fmt.Errorf("failed to read stderr: %w", err)
+		}
+		c.log = buf
 	}
 	err := c.cmd.Wait() // Closes pipes.
 	if err == nil {
@@ -163,17 +177,4 @@ func sortkeys[K cmp.Ordered, V any](m map[K]V) []K {
 	}
 	slices.Sort(keys)
 	return keys
-}
-
-func must(err error) {
-	if err != nil {
-		panic(err)
-	}
-}
-
-func must1[T any](r0 T, err error) T {
-	if err != nil {
-		panic(err)
-	}
-	return r0
 }
