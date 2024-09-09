@@ -59,7 +59,8 @@ func Run(cmd io.Reader) error {
 // Get executes a command and captures its output.
 // Result is never nil, even if error is not nil.
 // Checking Result.Code > 0 is not sufficient, as it will default to 0 even in
-// the presence of an error, such as a "command not found" error.
+// cases where the command does not successfully complete, such as a "command
+// not found" error.
 func Get(cmd io.Reader) (*Result, error) {
 	fmt.Fprintln(Trace, cmd)
 
