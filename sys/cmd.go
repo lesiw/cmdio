@@ -102,7 +102,8 @@ func (c *cmd) Read(bytes []byte) (int, error) {
 	var n int
 	var err error
 	if c.reader == nil {
-		goto nilreader
+		err = io.EOF
+		goto skipread
 	}
 
 	go func() {
@@ -118,8 +119,8 @@ func (c *cmd) Read(bytes []byte) (int, error) {
 		err = ret.err
 	}
 
-nilreader:
-	if err != nil || n == 0 {
+skipread:
+	if err != nil {
 		if err1 := c.wait(); err1 != nil {
 			err = err1
 		}

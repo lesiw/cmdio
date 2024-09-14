@@ -53,6 +53,9 @@ func Run(cmd io.Reader) error {
 		return err
 	}
 	_, err := cmd.Read(nil)
+	if err == io.EOF {
+		err = nil
+	}
 	return NewError(err, readWriter(cmd))
 }
 
