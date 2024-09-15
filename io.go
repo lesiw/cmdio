@@ -99,5 +99,9 @@ func Get(cmd io.Reader) (*Result, error) {
 		r.Code = c.Code()
 	}
 
+	if err != nil && r.Log != "" {
+		err = NewError(&logError{err, []byte(r.Log)}, r.Cmd)
+	}
+
 	return r, err
 }

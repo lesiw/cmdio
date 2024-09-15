@@ -1,6 +1,7 @@
 package cmdio
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 )
@@ -25,15 +26,31 @@ func (e *Error) Error() string {
 
 func (e *Error) Print(w io.Writer) {
 	fmt.Fprintf(w, "exec failed: %v: %s\n", e.cmd, e.Error())
-	if l, ok := e.cmd.(Logger); ok {
-		fmt.Fprintf(w, "\nlog:\n---\n")
-		if _, err := io.Copy(w, l.Log()); err != nil {
-			fmt.Fprintf(w, "--- error reading log: %s ---", err)
+	if l, ok := e.err.(Logger); ok {
+		buf, err := io.ReadAll(l.Log())
+		if err == nil && len(buf) > 0 {
+			fmt.Fprintf(w, "\nlog:\n---\n%s\n---\n", string(buf))
 		}
-		fmt.Fprintf(w, "\n---\n")
 	}
 }
 
 func (e *Error) Unwrap() error {
+	return e.err
+}
+
+type logError struct {
+	err error
+	log []byte
+}
+
+func (e *logError) Error() string {
+	return e.err.Error()
+}
+
+func (e *logError) Log() io.Reader {
+	return bytes.NewReader(e.log)
+}
+
+func (e *logError) Unwrap() error {
 	return e.err
 }

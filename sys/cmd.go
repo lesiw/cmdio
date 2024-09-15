@@ -76,8 +76,8 @@ func (c *cmd) _start() error {
 		c.logger = r
 		c.cmd.Stderr = w
 		c.closers = append(c.closers, w)
-		close(c.logready)
 	}
+	close(c.logready)
 	if err := c.cmd.Start(); err != nil {
 		for _, cl := range c.closers {
 			_ = cl.Close() // Best effort.
