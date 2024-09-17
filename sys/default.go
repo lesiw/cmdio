@@ -27,3 +27,7 @@ func MustGet(args ...string) *cmdio.Result {
 func Command(args ...string) io.ReadWriter {
 	return defaultbox.Command(args...)
 }
+
+func Env(name string) (value string) {
+	return defaultbox.Env(name)
+}

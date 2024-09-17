@@ -1,12 +1,20 @@
 package cmdio
 
 import (
+	"bufio"
 	"context"
 	"io"
+	"strings"
 )
 
+// A Commander is an interface representing a computer.
 type Commander interface {
 	Command(context.Context, map[string]string, ...string) io.ReadWriter
+}
+
+// An Enver retrieves environment variables.
+type Enver interface {
+	Env(string) string
 }
 
 // Box is an abstraction of a computer.
@@ -72,4 +80,20 @@ func (b *Box) Close() error {
 		return closer.Close()
 	}
 	return nil
+}
+
+// Env returns the value of an environment variable.
+func (b *Box) Env(name string) (value string) {
+	if enver, ok := b.cdr.(Enver); ok {
+		return enver.Env(name)
+	}
+	scanner := bufio.NewScanner(b.Command("env"))
+	for scanner.Scan() {
+		line := scanner.Text()
+		k, v, ok := strings.Cut(line, "=")
+		if ok && k == name {
+			return v
+		}
+	}
+	return
 }
