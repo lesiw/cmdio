@@ -12,7 +12,7 @@ type Commander interface {
 	Command(context.Context, map[string]string, ...string) io.ReadWriter
 }
 
-// An Enver retrieves environment variables.
+// An Enver has readable environment variables.
 type Enver interface {
 	Env(string) string
 }

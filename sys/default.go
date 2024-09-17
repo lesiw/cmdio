@@ -1,33 +1,19 @@
 package sys
 
 import (
+	"context"
 	"io"
 
 	"lesiw.io/cmdio"
 )
 
-var defaultbox = Box()
+var box = Box()
 
-func Run(args ...string) error {
-	return defaultbox.Run(args...)
-}
-
-func MustRun(args ...string) {
-	defaultbox.MustRun(args...)
-}
-
-func Get(args ...string) (*cmdio.Result, error) {
-	return defaultbox.Get(args...)
-}
-
-func MustGet(args ...string) *cmdio.Result {
-	return defaultbox.MustGet(args...)
-}
-
-func Command(args ...string) io.ReadWriter {
-	return defaultbox.Command(args...)
-}
-
-func Env(name string) (value string) {
-	return defaultbox.Env(name)
-}
+func Command(args ...string) io.ReadWriter       { return box.Command(args...) }
+func Env(name string) (value string)             { return box.Env(name) }
+func Get(args ...string) (*cmdio.Result, error)  { return box.Get(args...) }
+func MustGet(args ...string) *cmdio.Result       { return box.MustGet(args...) }
+func MustRun(args ...string)                     { box.MustRun(args...) }
+func Run(args ...string) error                   { return box.Run(args...) }
+func WithContext(ctx context.Context) *cmdio.Box { return box.WithContext(ctx) }
+func WithEnv(env map[string]string) *cmdio.Box   { return box.WithEnv(env) }
