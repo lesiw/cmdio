@@ -15,10 +15,6 @@ import (
 	"lesiw.io/cmdio"
 )
 
-func Command(args ...string) io.ReadWriter {
-	return defaultBox.Command(args...)
-}
-
 type cmd struct {
 	ctx  context.Context
 	cmd  *exec.Cmd
@@ -34,7 +30,7 @@ type cmd struct {
 	reader io.ReadCloser
 	logger io.ReadCloser
 
-	logready chan struct{}
+	ready chan struct{}
 
 	closers []io.Closer
 }
@@ -46,18 +42,23 @@ func (c *cmd) Attach() error {
 	return nil
 }
 
-func (c *cmd) init() {
+func newCmd(ctx context.Context, env map[string]string, args ...string) *cmd {
+	c := &cmd{}
+	c.ctx = ctx
+	c.cmd = exec.CommandContext(ctx, args[0], args[1:]...)
+	c.env = env
 	c.cmd.Env = os.Environ()
-	for k, v := range c.env {
+	for k, v := range env {
 		c.cmd.Env = append(c.cmd.Env, k+"="+v)
 	}
-	c.start = sync.OnceValue(c._start)
-	c.wait = sync.OnceValue(c._wait)
+	c.start = sync.OnceValue(c.startFunc)
+	c.wait = sync.OnceValue(c.waitFunc)
 	c.cmdwait = make(chan error)
-	c.logready = make(chan struct{})
+	c.ready = make(chan struct{})
+	return c
 }
 
-func (c *cmd) _start() error {
+func (c *cmd) startFunc() error {
 	if c.cmd.Stdin == nil {
 		w, err := c.cmd.StdinPipe()
 		if err != nil {
@@ -77,7 +78,7 @@ func (c *cmd) _start() error {
 		c.cmd.Stderr = w
 		c.closers = append(c.closers, w)
 	}
-	close(c.logready)
+	close(c.ready)
 	if err := c.cmd.Start(); err != nil {
 		for _, cl := range c.closers {
 			_ = cl.Close() // Best effort.
@@ -155,7 +156,7 @@ skipread:
 }
 
 func (c *cmd) Log() io.Reader {
-	<-c.logready
+	<-c.ready
 	return c.logger
 }
 
@@ -163,7 +164,7 @@ func (c *cmd) Code() int {
 	return c.code
 }
 
-func (c *cmd) _wait() error {
+func (c *cmd) waitFunc() error {
 	err := <-c.cmdwait
 	if ee := new(exec.ExitError); errors.As(err, &ee) {
 		c.code = ee.ExitCode()

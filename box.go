@@ -6,30 +6,43 @@ import (
 )
 
 type Commander interface {
-	Command(context.Context, ...string) io.ReadWriter
+	Command(context.Context, map[string]string, ...string) io.ReadWriter
 }
 
-// Box represents any entity that can execute commands.
+// Box is an abstraction of a computer.
+// It represents any entity that can execute commands.
 // This might be the system, a container, a remote server, or something else.
 type Box struct {
-	Commander
 	ctx context.Context
+	env map[string]string
+	cdr Commander
 }
 
-func NewBox(c Commander) *Box {
-	return &Box{c, nil}
+// NewBox creates a new box.
+func NewBox(ctx context.Context, env map[string]string, cmd Commander) *Box {
+	return &Box{ctx, env, cmd}
 }
 
-func NewBoxContext(c Commander, ctx context.Context) *Box {
-	return &Box{c, ctx}
+// WithEnv creates a new box with the provided env.
+// The new box will share the same context and commander as its parent.
+func (b *Box) WithEnv(env map[string]string) *Box {
+	return &Box{b.ctx, env, b.cdr}
 }
 
+// WithContext creates a new box with the provided [context.Context].
+// The new box will share the same environment and commander as its parent.
+func (b *Box) WithContext(ctx context.Context) *Box {
+	return &Box{ctx, b.env, b.cdr}
+}
+
+// Command returns an command as an io.ReadWriter.
+// The command will not be executed until it is read.
 func (b *Box) Command(args ...string) io.ReadWriter {
 	ctx := b.ctx
 	if ctx == nil {
 		ctx = context.Background()
 	}
-	return b.Commander.Command(ctx, args...)
+	return b.cdr.Command(ctx, b.env, args...)
 }
 
 // Run runs a command.
@@ -53,7 +66,10 @@ func (b *Box) MustGet(args ...string) *Result {
 	return must1(b.Get(args...))
 }
 
-// WithContext returns a new copy of the provided Box with a context.
-func WithContext(b *Box, ctx context.Context) *Box {
-	return &Box{b.Commander, ctx}
+// Close closes the underlying Commander if it is an [io.Closer].
+func (b *Box) Close() error {
+	if closer, ok := b.cdr.(io.Closer); ok {
+		return closer.Close()
+	}
+	return nil
 }
