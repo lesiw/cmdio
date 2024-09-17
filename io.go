@@ -83,7 +83,7 @@ func Get(cmd io.Reader) (*Result, error) {
 			return nil
 		})
 	} else {
-		close(out)
+		close(log)
 	}
 	wg.Go(func() error {
 		buf, err := io.ReadAll(cmd)
