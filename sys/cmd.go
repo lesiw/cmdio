@@ -47,6 +47,9 @@ func newCmd(ctx context.Context, env map[string]string, args ...string) *cmd {
 	c.ctx = ctx
 	c.cmd = exec.CommandContext(ctx, args[0], args[1:]...)
 	c.env = env
+	if dir, ok := env["PWD"]; ok {
+		c.cmd.Dir = dir
+	}
 	c.cmd.Env = os.Environ()
 	for k, v := range env {
 		c.cmd.Env = append(c.cmd.Env, k+"="+v)
