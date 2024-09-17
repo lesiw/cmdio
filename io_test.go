@@ -192,8 +192,8 @@ func TestGetError(t *testing.T) {
 
 	r, err := Get(cmd)
 
-	if r != nil {
-		t.Errorf("Get().CmdResult = %q, want <nil>", r)
+	if r == nil {
+		t.Error("Get().CmdResult = <nil>, want Result")
 	}
 	if got, want := err.Error(), "some error"; got != want {
 		t.Errorf("Get().error = %q, want %q", got, want)
