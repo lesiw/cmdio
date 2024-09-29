@@ -7,18 +7,19 @@ import (
 	"lesiw.io/cmdio"
 )
 
-type sysbox struct{}
+type cmdr struct{}
 
-func (b *sysbox) Command(
+func (cmdr) Command(
 	ctx context.Context, env map[string]string, args ...string,
 ) io.ReadWriter {
 	return newCmd(ctx, env, args...)
 }
 
-func Box() *cmdio.Box {
-	return cmdio.NewBox(
+// Runner instantiates a [cmdio.Runner] that runs commands on the local system.
+func Runner() *cmdio.Runner {
+	return cmdio.NewRunner(
 		context.Background(),
 		make(map[string]string),
-		new(sysbox),
+		new(cmdr),
 	)
 }

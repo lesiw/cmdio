@@ -11,8 +11,6 @@ import (
 	"slices"
 	"strings"
 	"sync"
-
-	"lesiw.io/cmdio"
 )
 
 type cmd struct {
@@ -26,11 +24,9 @@ type cmd struct {
 	start func() error
 	wait  func() error
 
-	writer io.WriteCloser
 	reader io.ReadCloser
-	logger io.ReadCloser
-
-	ready chan struct{}
+	writer io.WriteCloser
+	logger io.Writer
 
 	closers []io.Closer
 }
@@ -43,7 +39,7 @@ func (c *cmd) Attach() error {
 }
 
 func newCmd(ctx context.Context, env map[string]string, args ...string) *cmd {
-	c := &cmd{}
+	c := new(cmd)
 	c.ctx = ctx
 	c.cmd = exec.CommandContext(ctx, args[0], args[1:]...)
 	c.env = env
@@ -57,7 +53,6 @@ func newCmd(ctx context.Context, env map[string]string, args ...string) *cmd {
 	c.start = sync.OnceValue(c.startFunc)
 	c.wait = sync.OnceValue(c.waitFunc)
 	c.cmdwait = make(chan error)
-	c.ready = make(chan struct{})
 	return c
 }
 
@@ -76,17 +71,13 @@ func (c *cmd) startFunc() error {
 		c.closers = append(c.closers, w)
 	}
 	if c.cmd.Stderr == nil {
-		r, w := io.Pipe()
-		c.logger = r
-		c.cmd.Stderr = w
-		c.closers = append(c.closers, w)
+		c.cmd.Stderr = c.logger
 	}
-	close(c.ready)
 	if err := c.cmd.Start(); err != nil {
 		for _, cl := range c.closers {
 			_ = cl.Close() // Best effort.
 		}
-		return cmdio.NewError(err, c)
+		return err
 	}
 	go func() {
 		err := c.cmd.Wait()
@@ -109,17 +100,20 @@ func (c *cmd) Write(bytes []byte) (int, error) {
 	}
 	n, err := c.writer.Write(bytes)
 	if err != nil {
-		return n, cmdio.NewError(fmt.Errorf(`failed write: %w`, err), c)
+		return n, fmt.Errorf("failed write: %w", err)
 	}
 	return n, nil
 }
 
 func (c *cmd) Close() error {
+	if err := c.start(); err != nil {
+		return err
+	}
 	if c.writer == nil {
 		return nil
 	}
 	if err := c.writer.Close(); err != nil {
-		return cmdio.NewError(fmt.Errorf(`failed close: %w`, err), c)
+		return fmt.Errorf("failed close: %w", err)
 	}
 	return nil
 }
@@ -158,9 +152,8 @@ skipread:
 	return n, err
 }
 
-func (c *cmd) Log() io.Reader {
-	<-c.ready
-	return c.logger
+func (c *cmd) Log(w io.Writer) {
+	c.logger = w
 }
 
 func (c *cmd) Code() int {
@@ -172,7 +165,7 @@ func (c *cmd) waitFunc() error {
 	if ee := new(exec.ExitError); errors.As(err, &ee) {
 		c.code = ee.ExitCode()
 	}
-	return cmdio.NewError(err, c)
+	return err
 }
 
 func (c *cmd) String() string {

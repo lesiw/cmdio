@@ -13,11 +13,11 @@ import (
 
 func TestRun(t *testing.T) {
 	outbuf, errbuf := new(bytes.Buffer), new(bytes.Buffer)
-	swap[io.Writer](t, &Stdout, outbuf)
-	swap[io.Writer](t, &Trace.(*prefixWriter).w, errbuf)
+	swap[io.Writer](t, &stdout, outbuf)
+	swap[io.Writer](t, &Trace, errbuf)
 	cmd := bytes.NewBufferString("hello world")
 
-	err := Run(cmd)
+	err := run(cmd)
 
 	if err != nil {
 		t.Errorf("Run(%q) = %q, want <nil>", cmd, err)
@@ -25,7 +25,7 @@ func TestRun(t *testing.T) {
 	if got, want := outbuf.String(), "hello world"; got != want {
 		t.Errorf("Run(%q) stdout = %q, want %q", cmd, got, want)
 	}
-	if got, want := errbuf.String(), "+ hello world\n"; got != want {
+	if got, want := errbuf.String(), "hello world\n"; got != want {
 		t.Errorf("Run(%q) stderr = %q, want %q", cmd, got, want)
 	}
 	// Ensure nothing was written to cmd after being read.
@@ -37,11 +37,11 @@ func TestRun(t *testing.T) {
 func TestRunError(t *testing.T) {
 	swap(t, &Trace, io.Discard)
 	outbuf, errbuf := new(bytes.Buffer), new(bytes.Buffer)
-	swap[io.Writer](t, &Stdout, outbuf)
-	swap[io.Writer](t, &Stderr, errbuf)
+	swap[io.Writer](t, &stdout, outbuf)
+	swap[io.Writer](t, &stderr, errbuf)
 	cmd := iotest.ErrReader(errors.New("some error"))
 
-	err := Run(cmd)
+	err := run(cmd)
 
 	if got, want := err.Error(), "some error"; got != want {
 		t.Errorf("Run() = %q, want %q", got, want)
@@ -74,11 +74,11 @@ func (a *testAttacher) Read(p []byte) (int, error) {
 func TestRunAttacher(t *testing.T) {
 	swap(t, &Trace, io.Discard)
 	outbuf, errbuf := new(bytes.Buffer), new(bytes.Buffer)
-	swap[io.Writer](t, &Stdout, outbuf)
-	swap[io.Writer](t, &Stderr, errbuf)
+	swap[io.Writer](t, &stdout, outbuf)
+	swap[io.Writer](t, &stderr, errbuf)
 	a := new(testAttacher)
 
-	err := Run(a)
+	err := run(a)
 
 	if err != nil {
 		t.Errorf("Run() = %q, want <nil>", err)
@@ -103,12 +103,12 @@ func TestRunAttacher(t *testing.T) {
 func TestRunAttacherAttachError(t *testing.T) {
 	swap(t, &Trace, io.Discard)
 	outbuf, errbuf := new(bytes.Buffer), new(bytes.Buffer)
-	swap[io.Writer](t, &Stdout, outbuf)
-	swap[io.Writer](t, &Stderr, errbuf)
+	swap[io.Writer](t, &stdout, outbuf)
+	swap[io.Writer](t, &stderr, errbuf)
 	a := new(testAttacher)
 	a.attachError = errors.New("attach error")
 
-	err := Run(a)
+	err := run(a)
 
 	if got, want := err.Error(), "attach error"; got != want {
 		t.Errorf("Run() = %q, want %q", got, want)
@@ -130,12 +130,12 @@ func TestRunAttacherAttachError(t *testing.T) {
 func TestRunAttacherReadError(t *testing.T) {
 	swap(t, &Trace, io.Discard)
 	outbuf, errbuf := new(bytes.Buffer), new(bytes.Buffer)
-	swap[io.Writer](t, &Stdout, outbuf)
-	swap[io.Writer](t, &Stderr, errbuf)
+	swap[io.Writer](t, &stdout, outbuf)
+	swap[io.Writer](t, &stderr, errbuf)
 	a := new(testAttacher)
 	a.readError = errors.New("read error")
 
-	err := Run(a)
+	err := run(a)
 
 	if got, want := err.Error(), "read error"; got != want {
 		t.Errorf("Run() = %q, want %q", got, want)
@@ -159,13 +159,13 @@ func TestRunAttacherReadError(t *testing.T) {
 
 func TestGet(t *testing.T) {
 	outbuf, errbuf := new(bytes.Buffer), new(bytes.Buffer)
-	swap[io.Writer](t, &Stdout, outbuf)
-	swap[io.Writer](t, &Trace.(*prefixWriter).w, errbuf)
+	swap[io.Writer](t, &stdout, outbuf)
+	swap[io.Writer](t, &Trace, errbuf)
 	cmd := bytes.NewBufferString("hello world")
 
-	r, err := Get(cmd)
+	r, err := get(cmd)
 
-	checkEqual(t, fmt.Sprintf("Get(%q).CmdResult", cmd), r, &Result{
+	checkEqual(t, fmt.Sprintf("Get(%q).CmdResult", cmd), r, Result{
 		Cmd: cmd, Out: "hello world",
 	})
 	if err != nil {
@@ -174,7 +174,7 @@ func TestGet(t *testing.T) {
 	if got, want := outbuf.String(), ""; got != want {
 		t.Errorf("Get(%q) stdout = %q, want %q", cmd, got, want)
 	}
-	if got, want := errbuf.String(), "+ hello world\n"; got != want {
+	if got, want := errbuf.String(), "hello world\n"; got != want {
 		t.Errorf("Run(%q) stderr = %q, want %q", cmd, got, want)
 	}
 	// Ensure nothing was written to cmd after being read.
@@ -186,15 +186,12 @@ func TestGet(t *testing.T) {
 func TestGetError(t *testing.T) {
 	swap(t, &Trace, io.Discard)
 	outbuf, errbuf := new(bytes.Buffer), new(bytes.Buffer)
-	swap[io.Writer](t, &Stdout, outbuf)
-	swap[io.Writer](t, &Stderr, errbuf)
+	swap[io.Writer](t, &stdout, outbuf)
+	swap[io.Writer](t, &stderr, errbuf)
 	cmd := iotest.ErrReader(errors.New("some error"))
 
-	r, err := Get(cmd)
+	_, err := get(cmd)
 
-	if r == nil {
-		t.Error("Get().CmdResult = <nil>, want Result")
-	}
 	if got, want := err.Error(), "some error"; got != want {
 		t.Errorf("Get().error = %q, want %q", got, want)
 	}
