@@ -10,7 +10,7 @@ import (
 )
 
 func run(cmd io.Reader) error {
-	fmt.Fprintln(Trace, cmd)
+	fmt.Fprintln(Trace, strings.TrimRight(fmt.Sprintf("%v", cmd), "\n"))
 	a, ok := cmd.(Attacher)
 	if !ok {
 		// If this command does not implement Attacher, stream it to stdout
@@ -32,7 +32,7 @@ func run(cmd io.Reader) error {
 }
 
 func get(cmd io.Reader) (Result, error) {
-	fmt.Fprintln(Trace, cmd)
+	fmt.Fprintln(Trace, strings.TrimRight(fmt.Sprintf("%v", cmd), "\n"))
 
 	var r Result
 	var wg errgroup.Group

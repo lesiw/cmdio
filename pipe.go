@@ -22,7 +22,7 @@ func pipeTrace(src io.Reader, mid []io.ReadWriter) {
 			fmt.Fprintf(Trace, " | ")
 		}
 		if str, ok := e.(fmt.Stringer); ok {
-			fmt.Fprint(Trace, str.String())
+			fmt.Fprint(Trace, strings.TrimRight(str.String(), "\n"))
 		} else {
 			fmt.Fprintf(Trace, "<%T>", e)
 		}
@@ -70,7 +70,7 @@ func MustPipe(src io.Reader, cmd ...io.ReadWriter) {
 				e = cmd[i]
 			}
 			if str, ok := e.(fmt.Stringer); ok {
-				b.WriteString(str.String())
+				b.WriteString(strings.TrimRight(str.String(), "\n"))
 			} else {
 				fmt.Fprintf(&b, "<%T>", e)
 			}
@@ -133,7 +133,7 @@ func MustGetPipe(src io.Reader, cmd ...io.ReadWriter) Result {
 				e = cmd[i]
 			}
 			if str, ok := e.(fmt.Stringer); ok {
-				b.WriteString(str.String())
+				b.WriteString(strings.TrimRight(str.String(), "\n"))
 			} else {
 				fmt.Fprintf(&b, "<%T>", e)
 			}
