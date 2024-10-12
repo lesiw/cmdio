@@ -113,7 +113,9 @@ func (c *cmd) Close() error {
 		return nil
 	}
 	if err := c.writer.Close(); err != nil {
-		return fmt.Errorf("failed close: %w", err)
+		if !errors.Is(err, os.ErrClosed) {
+			return fmt.Errorf("failed close: %w", err)
+		}
 	}
 	return nil
 }
