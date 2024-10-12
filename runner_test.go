@@ -182,7 +182,6 @@ func ExampleRunner_WithEnv_multiple() {
 	// rnr2(FOO): bar
 }
 
-// nolint: errcheck
 func ExampleRunner_WithEnv_pwd() {
 	cmdio.Trace = prefix.NewWriter("+ ", os.Stdout)
 	rnr := sys.Runner()

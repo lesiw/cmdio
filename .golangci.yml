@@ -16,3 +16,9 @@ linters-settings:
   lll:
     tab-width: 4
     line-length: 79
+
+issues:
+  exclude-rules:
+    - linters:
+        - errcheck
+      source: "defer "

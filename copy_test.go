@@ -8,7 +8,6 @@ import (
 	"lesiw.io/cmdio/sys"
 )
 
-// nolint: errcheck
 func ExampleCopy() {
 	rnr := sys.Runner()
 
