@@ -19,12 +19,12 @@ func (c *cdr) Command(
 	return c.rnr.Commander.Command(ctx, env, append(c.cmd, args...)...)
 }
 
-// New instantiates a [cmdio.WithRunner] that runs subcommands.
+// New instantiates a [cmdio.Runner] that runs subcommands.
 func New(cmd ...string) *cmdio.Runner {
 	return WithRunner(sys.Runner(), cmd...)
 }
 
-// WithRunner instantiates a [cmdio.WithRunner] that runs subcommands using the
+// WithRunner instantiates a [cmdio.Runner] that runs subcommands using the
 // given runner.
 func WithRunner(rnr *cmdio.Runner, cmd ...string) *cmdio.Runner {
 	return cmdio.NewRunner(
