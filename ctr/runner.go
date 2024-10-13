@@ -109,7 +109,7 @@ func buildContainer(
 			return // Container is newer than Containerfile.
 		}
 	}
-	_, err = rnr.Get(
+	err = rnr.Run(
 		"image", "build",
 		"--file", path,
 		"--no-cache",
