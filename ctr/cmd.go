@@ -56,11 +56,12 @@ func (c *cmd) setCmd(attach bool) {
 	if attach {
 		cmd = append(cmd, "-t")
 	}
-	if c.env["PWD"] != "" {
-		cmd = append(cmd, "-w", c.env["PWD"])
-	}
 	for k, v := range c.env {
-		cmd = append(cmd, "-e", k+"="+v)
+		if k == "PWD" {
+			cmd = append(cmd, "-w", c.env["PWD"])
+		} else {
+			cmd = append(cmd, "-e", k+"="+v)
+		}
 	}
 	cmd = append(cmd, c.cdr.ctrid)
 	cmd = append(cmd, c.arg...)
