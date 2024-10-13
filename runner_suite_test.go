@@ -3,9 +3,9 @@ package cmdio_test
 import (
 	"context"
 	"errors"
-	"io"
 	"reflect"
 	"testing"
+	"time"
 
 	"lesiw.io/cmdio"
 	"lesiw.io/cmdio/ctr"
@@ -18,7 +18,13 @@ var runners = map[string]*cmdio.Runner{
 }
 
 func TestRunners(t *testing.T) {
-	cmdio.Trace = io.Discard
+	t.Cleanup(func() {
+		for _, rnr := range runners {
+			if err := rnr.Close(); err != nil {
+				panic(err)
+			}
+		}
+	})
 	for name, rnr := range runners {
 		suite := reflect.TypeOf(rnrtests{})
 		for i := 0; i < suite.NumMethod(); i++ {
@@ -31,13 +37,26 @@ func TestRunners(t *testing.T) {
 				})
 			})
 		}
-		if err := rnr.Close(); err != nil {
-			t.Fatal(err)
-		}
 	}
 }
 
 type rnrtests struct{}
+
+func (rnrtests) TestPipe(t *testing.T, rnr *cmdio.Runner) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	rnr = rnr.WithContext(ctx)
+	r, err := cmdio.GetPipe(
+		rnr.Command("echo", "hello world"),
+		rnr.Command("tr", "a-z", "A-Z"),
+	)
+	if err != nil {
+		t.Error(err)
+	}
+	if got, want := r.Out, "HELLO WORLD"; got != want {
+		t.Errorf("[echo hello world] | [tr a-z A-Z] = %q, want %q", got, want)
+	}
+	cancel()
+}
 
 func (rnrtests) TestPipeToCompletedCommand(t *testing.T, rnr *cmdio.Runner) {
 	err := cmdio.Pipe(

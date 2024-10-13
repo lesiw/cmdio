@@ -37,6 +37,13 @@ func (c *cmd) Attach() error {
 	return nil
 }
 
+func (c *cmd) Close() error {
+	if cl, ok := c.ReadWriter.(io.Closer); ok {
+		return cl.Close()
+	}
+	return nil
+}
+
 func (c *cmd) String() string {
 	if s, ok := c.ReadWriter.(fmt.Stringer); ok {
 		return s.String()
@@ -45,9 +52,9 @@ func (c *cmd) String() string {
 }
 
 func (c *cmd) setCmd(attach bool) {
-	cmd := []string{"container", "exec"}
+	cmd := []string{"container", "exec", "-i"}
 	if attach {
-		cmd = append(cmd, "-ti")
+		cmd = append(cmd, "-t")
 	}
 	if c.env["PWD"] != "" {
 		cmd = append(cmd, "-w", c.env["PWD"])

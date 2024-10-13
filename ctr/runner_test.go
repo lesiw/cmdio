@@ -30,7 +30,7 @@ func TestString(t *testing.T) {
 	defer rnr.Close()
 
 	cmd := rnr.Command("echo", "hello world")
-	str := fmt.Sprintf("docker container exec %s echo 'hello world'",
+	str := fmt.Sprintf("docker container exec -i %s echo 'hello world'",
 		rnr.Commander.(*cdr).ctrid)
 	if got, want := fmt.Sprintf("%v", cmd), str; got != want {
 		t.Errorf("Sprintf(cmd) = %q, want = %q", got, want)
