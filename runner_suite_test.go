@@ -1,16 +1,20 @@
 package cmdio_test
 
 import (
+	"context"
+	"errors"
 	"io"
 	"reflect"
 	"testing"
 
 	"lesiw.io/cmdio"
+	"lesiw.io/cmdio/ctr"
 	"lesiw.io/cmdio/sys"
 )
 
 var runners = map[string]*cmdio.Runner{
 	"sys": sys.Runner(),
+	"ctr": mustv(ctr.New("alpine")),
 }
 
 func TestRunners(t *testing.T) {
@@ -26,6 +30,9 @@ func TestRunners(t *testing.T) {
 					reflect.ValueOf(rnr),
 				})
 			})
+		}
+		if err := rnr.Close(); err != nil {
+			t.Fatal(err)
 		}
 	}
 }
@@ -50,4 +57,37 @@ func (rnrtests) TestPipeToFailedCommand(t *testing.T, rnr *cmdio.Runner) {
 	if err == nil {
 		t.Error("want err, got <nil>")
 	}
+}
+
+func (rnrtests) TestEnv(t *testing.T, rnr *cmdio.Runner) {
+	rnr = rnr.WithEnv(map[string]string{
+		"TEST_ENV": "testenv",
+	})
+	if got, want := rnr.Env("TEST_ENV"), "testenv"; got != want {
+		t.Errorf("Env(TEST_ENV) = %q, want %q", got, want)
+	}
+}
+
+func (rnrtests) TestContext(t *testing.T, rnr *cmdio.Runner) {
+	ctx, cancel := context.WithCancel(context.Background())
+	rnr = rnr.WithContext(ctx)
+	ch := make(chan struct{})
+	go func() {
+		_, err := rnr.Get("sleep", "5")
+		if err == nil {
+			t.Error("Get(sleep 5) err = <nil>, want context.Canceled")
+		} else if !errors.Is(err, context.Canceled) {
+			t.Errorf("Get(sleep 5) err = %q, want context.Canceled", err)
+		}
+		ch <- struct{}{}
+	}()
+	cancel()
+	<-ch
+}
+
+func mustv[T any](v T, err error) T {
+	if err != nil {
+		panic(err)
+	}
+	return v
 }

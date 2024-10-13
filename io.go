@@ -5,8 +5,10 @@
 // optionally implement [Logger] to capture standard error and [Coder] to
 // represent exit codes.
 //
-// Commands are instantiated by a [Runner]. One such runner implementation is
-// [lesiw.io/cmdio/sys], which runs commands on the local system.
+// Commands are instantiated by a [Runner]. This package contains several
+// Runner implementations: [lesiw.io/cmdio/sys], which runs commands on the
+// local system; [lesiw.io/cmdio/ctr], which runs commands in containers; and
+// [lesiw.io/cmdio/sub], which runs commands as subcommands.
 //
 // While most of this package is written to support traditional Go error
 // handling, Must-type functions, such as [Runner.MustRun] and [MustPipe], are

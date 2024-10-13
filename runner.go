@@ -12,7 +12,7 @@ import (
 type Runner struct {
 	ctx context.Context
 	env map[string]string
-	cdr Commander
+	Commander
 }
 
 // NewRunner instantiates a new [Runner].
@@ -34,7 +34,7 @@ func (rnr *Runner) WithEnv(env map[string]string) *Runner {
 	for k, v := range env {
 		env2[k] = v
 	}
-	return &Runner{rnr.ctx, env2, rnr.cdr}
+	return &Runner{rnr.ctx, env2, rnr.Commander}
 }
 
 // WithContext creates a new runner with the provided [context.Context].
@@ -44,7 +44,7 @@ func (rnr *Runner) WithContext(ctx context.Context) *Runner {
 	for k, v := range rnr.env {
 		env[k] = v
 	}
-	return &Runner{ctx, env, rnr.cdr}
+	return &Runner{ctx, env, rnr.Commander}
 }
 
 // Command instantiates a command as an [io.ReadWriter].
@@ -56,7 +56,7 @@ func (rnr *Runner) Command(args ...string) io.ReadWriter {
 	if ctx == nil {
 		ctx = context.Background()
 	}
-	return rnr.cdr.Command(ctx, rnr.env, args...)
+	return rnr.Commander.Command(ctx, rnr.env, args...)
 }
 
 // Run attaches a command to the controlling terminal and executes it.
@@ -94,7 +94,7 @@ func (rnr *Runner) MustGet(args ...string) Result {
 
 // Close closes the underlying [Commander] if it is an [io.Closer].
 func (rnr *Runner) Close() error {
-	if closer, ok := rnr.cdr.(io.Closer); ok {
+	if closer, ok := rnr.Commander.(io.Closer); ok {
 		return closer.Close()
 	}
 	return nil
@@ -105,7 +105,7 @@ func (rnr *Runner) Close() error {
 // By default, it parses the output of an env command. [Commander]
 // implementations may customize this behavior by implementing [Enver].
 func (rnr *Runner) Env(name string) (value string) {
-	if enver, ok := rnr.cdr.(Enver); ok {
+	if enver, ok := rnr.Commander.(Enver); ok {
 		return enver.Env(name)
 	}
 	scanner := bufio.NewScanner(rnr.Command("env"))

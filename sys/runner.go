@@ -7,9 +7,9 @@ import (
 	"lesiw.io/cmdio"
 )
 
-type cmdr struct{}
+type cdr struct{}
 
-func (cmdr) Command(
+func (cdr) Command(
 	ctx context.Context, env map[string]string, args ...string,
 ) io.ReadWriter {
 	return newCmd(ctx, env, args...)
@@ -20,6 +20,6 @@ func Runner() *cmdio.Runner {
 	return cmdio.NewRunner(
 		context.Background(),
 		make(map[string]string),
-		new(cmdr),
+		new(cdr),
 	)
 }
