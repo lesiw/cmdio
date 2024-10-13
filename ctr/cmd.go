@@ -10,7 +10,7 @@ import (
 
 type cmd struct {
 	io.ReadWriter
-	*cdr
+	cdr *cdr
 	ctx context.Context
 	env map[string]string
 	arg []string
@@ -52,7 +52,7 @@ func (c *cmd) setCmd(attach bool) {
 	for k, v := range c.env {
 		cmd = append(cmd, "-e", k+"="+v)
 	}
-	cmd = append(cmd, c.ctrid)
+	cmd = append(cmd, c.cdr.ctrid)
 	cmd = append(cmd, c.arg...)
-	c.ReadWriter = c.rnr.Commander.Command(c.ctx, nil, cmd...)
+	c.ReadWriter = c.cdr.rnr.Commander.Command(c.ctx, nil, cmd...)
 }
