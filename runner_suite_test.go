@@ -85,6 +85,17 @@ func (rnrtests) TestContext(t *testing.T, rnr *cmdio.Runner) {
 	<-ch
 }
 
+func (rnrtests) TestPwd(t *testing.T, rnr *cmdio.Runner) {
+	rnr = rnr.WithEnv(map[string]string{"PWD": "/tmp"})
+	r, err := rnr.Get("pwd")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, want := r.Out, "/tmp"; got != want {
+		t.Errorf("[pwd] = %q, want %q", got, want)
+	}
+}
+
 func mustv[T any](v T, err error) T {
 	if err != nil {
 		panic(err)

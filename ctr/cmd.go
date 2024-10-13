@@ -49,6 +49,9 @@ func (c *cmd) setCmd(attach bool) {
 	if attach {
 		cmd = append(cmd, "-ti")
 	}
+	if c.env["PWD"] != "" {
+		cmd = append(cmd, "-w", c.env["PWD"])
+	}
 	for k, v := range c.env {
 		cmd = append(cmd, "-e", k+"="+v)
 	}
