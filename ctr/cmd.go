@@ -2,14 +2,12 @@ package ctr
 
 import (
 	"context"
-	"fmt"
-	"io"
 
 	"lesiw.io/cmdio"
 )
 
 type cmd struct {
-	io.ReadWriter
+	cmdio.Command
 	cdr *cdr
 	ctx context.Context
 	env map[string]string
@@ -18,7 +16,7 @@ type cmd struct {
 
 func newCmd(
 	cdr *cdr, ctx context.Context, env map[string]string, args ...string,
-) io.ReadWriter {
+) cmdio.Command {
 	c := &cmd{
 		ctx: ctx,
 		env: env,
@@ -31,24 +29,10 @@ func newCmd(
 
 func (c *cmd) Attach() error {
 	c.setCmd(true)
-	if a, ok := c.ReadWriter.(cmdio.Attacher); ok {
+	if a, ok := c.Command.(cmdio.Attacher); ok {
 		return a.Attach()
 	}
 	return nil
-}
-
-func (c *cmd) Close() error {
-	if cl, ok := c.ReadWriter.(io.Closer); ok {
-		return cl.Close()
-	}
-	return nil
-}
-
-func (c *cmd) String() string {
-	if s, ok := c.ReadWriter.(fmt.Stringer); ok {
-		return s.String()
-	}
-	return fmt.Sprintf("<%T>", c)
 }
 
 func (c *cmd) setCmd(attach bool) {
@@ -65,5 +49,5 @@ func (c *cmd) setCmd(attach bool) {
 	}
 	cmd = append(cmd, c.cdr.ctrid)
 	cmd = append(cmd, c.arg...)
-	c.ReadWriter = c.cdr.rnr.Commander.Command(c.ctx, nil, cmd...)
+	c.Command = c.cdr.rnr.Commander.Command(c.ctx, nil, cmd...)
 }

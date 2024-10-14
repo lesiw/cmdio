@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/sha1"
 	"fmt"
-	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -29,7 +28,7 @@ type cdr struct {
 
 func (c *cdr) Command(
 	ctx context.Context, env map[string]string, args ...string,
-) io.ReadWriter {
+) cmdio.Command {
 	return newCmd(c, ctx, env, args...)
 }
 

@@ -18,6 +18,7 @@ package cmdio
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"os"
 
@@ -28,21 +29,13 @@ import (
 //
 // The Command function accepts a [context.Context], a map of environment
 // variables, and a variable number of arguments representing the command
-// itself.
-//
-// The command must not begin execution until the first time it is read from or
-// written to. It must return [io.EOF] once execution has completed and all
-// output has been consumed.
-//
-// In general, the Write method will correspond to standard in and the Read
-// method will correspond to standard out. Commands may implement [Logger] to
-// represent standard error.
+// itself. It returns a [Command].
 type Commander interface {
 	Command(
 		ctx context.Context,
 		env map[string]string,
 		arg ...string,
-	) (cmd io.ReadWriter)
+	) (cmd Command)
 }
 
 // An Enver has environment variables.
@@ -76,6 +69,36 @@ type Coder interface {
 type Attacher interface {
 	Attach() error
 }
+
+// A [Command] is the broadest possible command interface.
+//
+// Commands must not begin execution until the first time they are read from or
+// written to. They must return [io.EOF] once execution has completed and all
+// output has been consumed.
+//
+// In general, the Write method will correspond to standard in, the Read
+// method will correspond to standard out, and an [io.Writer] may be passed
+// to Log for handling standard error.
+type Command interface {
+	io.ReadWriteCloser
+	fmt.Stringer
+	Attacher
+	Coder
+	Logger
+}
+
+// A [NopCommand] is an empty [Command] implementation. It is useful for
+// embedding in command implementations that may not choose to implement
+// optional interfaces.
+type NopCommand struct{}
+
+func (NopCommand) Read([]byte) (int, error)  { return 0, nil }
+func (NopCommand) Write([]byte) (int, error) { return 0, nil }
+func (NopCommand) Close() error              { return nil }
+func (NopCommand) String() string            { return "<nop>" }
+func (NopCommand) Attach() error             { return nil }
+func (NopCommand) Code() int                 { return 0 }
+func (NopCommand) Log(io.Writer)             {}
 
 // Trace is an [io.Writer] to which command tracing information is written.
 // To disable tracing, set this variable to [io.Discard].

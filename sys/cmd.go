@@ -11,9 +11,13 @@ import (
 	"slices"
 	"strings"
 	"sync"
+
+	"lesiw.io/cmdio"
 )
 
 type cmd struct {
+	cmdio.NopCommand
+
 	ctx  context.Context
 	cmd  *exec.Cmd
 	env  map[string]string
@@ -38,7 +42,9 @@ func (c *cmd) Attach() error {
 	return nil
 }
 
-func newCmd(ctx context.Context, env map[string]string, args ...string) *cmd {
+func newCmd(
+	ctx context.Context, env map[string]string, args ...string,
+) cmdio.Command {
 	c := new(cmd)
 	c.ctx = ctx
 	c.cmd = exec.CommandContext(ctx, args[0], args[1:]...)

@@ -2,7 +2,6 @@ package sub
 
 import (
 	"context"
-	"io"
 
 	"lesiw.io/cmdio"
 	"lesiw.io/cmdio/sys"
@@ -15,7 +14,7 @@ type cdr struct {
 
 func (c *cdr) Command(
 	ctx context.Context, env map[string]string, args ...string,
-) io.ReadWriter {
+) cmdio.Command {
 	return c.rnr.Commander.Command(ctx, env, append(c.cmd, args...)...)
 }
 
