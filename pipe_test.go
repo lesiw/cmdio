@@ -68,6 +68,7 @@ func ExampleMustPipe_panic() {
 	)
 	// Output:
 	// some error
+	//
 	// <*iotest.errReader> | <- some error
 	// tr a-z A-Z
 }
@@ -99,6 +100,7 @@ func ExampleMustGetPipe_panic() {
 	)
 	// Output:
 	// exit status 1
+	//
 	// busybox ls /bad_directory | <- exit status 1
 	// tr a-z A-Z
 	//

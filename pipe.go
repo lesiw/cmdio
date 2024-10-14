@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"strconv"
 	"strings"
 	"sync"
 )
@@ -30,6 +29,35 @@ func pipeTrace(src io.Reader, mid []io.ReadWriter) {
 	fmt.Fprintln(Trace)
 }
 
+func pipeErr(src io.Reader, cmd []io.ReadWriter, err error) string {
+	var b strings.Builder
+	if off, ok := err.(interface{ Offset() int }); ok {
+		var e any
+		for i := -1; i < len(cmd); i++ {
+			if i < 0 {
+				e = src
+			} else {
+				e = cmd[i]
+			}
+			if i > -1 {
+				b.WriteString("\n")
+			}
+			if str, ok := e.(fmt.Stringer); ok {
+				b.WriteString(strings.TrimRight(str.String(), "\n"))
+			} else {
+				fmt.Fprintf(&b, "<%T>", e)
+			}
+			if i < len(cmd)-1 {
+				b.WriteString(" |")
+			}
+			if i == off.Offset()-1 {
+				b.WriteString(" <- " + err.Error())
+			}
+		}
+	}
+	return b.String()
+}
+
 // Pipe pipes I/O streams together.
 func Pipe(src io.Reader, cmd ...io.ReadWriter) error {
 	pipeTrace(src, cmd)
@@ -45,6 +73,9 @@ func Pipe(src io.Reader, cmd ...io.ReadWriter) error {
 		}
 	}
 	_, err := Copy(nopCloser{os.Stdout}, src, cmd...)
+	if err != nil {
+		err = fmt.Errorf("%w\n\n%s", err, pipeErr(src, cmd, err))
+	}
 	return err
 }
 
@@ -54,35 +85,7 @@ func (nopCloser) Close() error { return nil }
 
 // MustPipe pipes I/O streams together and panics on failure.
 func MustPipe(src io.Reader, cmd ...io.ReadWriter) {
-	err := Pipe(src, cmd...)
-	if err == nil {
-		return
-	}
-	var b strings.Builder
-	b.WriteString(err.Error())
-	if off, ok := err.(interface{ Offset() int }); ok {
-		var e any
-		for i := -1; i < len(cmd); i++ {
-			b.WriteString("\n")
-			if i < 0 {
-				e = src
-			} else {
-				e = cmd[i]
-			}
-			if str, ok := e.(fmt.Stringer); ok {
-				b.WriteString(strings.TrimRight(str.String(), "\n"))
-			} else {
-				fmt.Fprintf(&b, "<%T>", e)
-			}
-			if i < len(cmd)-1 {
-				b.WriteString(" |")
-			}
-			if i == off.Offset()-1 {
-				b.WriteString(" <- " + err.Error())
-			}
-		}
-	}
-	panic(b.String())
+	must(Pipe(src, cmd...))
 }
 
 // GetPipe pipes I/O streams together and captures the output in a [Result].
@@ -111,44 +114,17 @@ func GetPipe(src io.Reader, cmd ...io.ReadWriter) (Result, error) {
 	if c, ok := r.Cmd.(Coder); ok {
 		r.Code = c.Code()
 	}
+	if err != nil {
+		err = fmt.Errorf("%w\n\n%s\n\nout:%slog:%scode: %d",
+			err, pipeErr(src, cmd, err), fmtout(r.Out), fmtout(r.Log), r.Code)
+	}
 	return r, err
 }
 
 // MustGetPipe pipes I/O streams together and captures the output in a
 // [Result]. It panics if any of the copy operations fail.
 func MustGetPipe(src io.Reader, cmd ...io.ReadWriter) Result {
-	r, err := GetPipe(src, cmd...)
-	if err == nil {
-		return r
-	}
-	var b strings.Builder
-	b.WriteString(err.Error())
-	if off, ok := err.(interface{ Offset() int }); ok {
-		var e any
-		for i := -1; i < len(cmd); i++ {
-			b.WriteString("\n")
-			if i < 0 {
-				e = src
-			} else {
-				e = cmd[i]
-			}
-			if str, ok := e.(fmt.Stringer); ok {
-				b.WriteString(strings.TrimRight(str.String(), "\n"))
-			} else {
-				fmt.Fprintf(&b, "<%T>", e)
-			}
-			if i < len(cmd)-1 {
-				b.WriteString(" |")
-			}
-			if i == off.Offset()-1 {
-				b.WriteString(" <- " + err.Error())
-			}
-		}
-	}
-	panic(b.String() + "\n\n" +
-		"out:" + fmtout(r.Out) +
-		"log:" + fmtout(r.Log) +
-		"code: " + strconv.Itoa(r.Code))
+	return mustv(GetPipe(src, cmd...))
 }
 
 type syncBuffer struct {

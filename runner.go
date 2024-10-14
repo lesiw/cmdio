@@ -3,8 +3,8 @@ package cmdio
 import (
 	"bufio"
 	"context"
+	"fmt"
 	"io"
-	"strconv"
 	"strings"
 )
 
@@ -76,20 +76,18 @@ func (rnr *Runner) MustRun(args ...string) {
 // and commands that fail to execute because they cannot be found will have no
 // exit code.
 func (rnr *Runner) Get(args ...string) (Result, error) {
-	return get(rnr.Command(args...))
+	r, err := get(rnr.Command(args...))
+	if err != nil {
+		err = fmt.Errorf("%w\nout:%slog:%scode: %d",
+			err, fmtout(r.Out), fmtout(r.Log), r.Code)
+	}
+	return r, err
 }
 
 // MustGet runs a command and captures its output in a [Result].
 // It panics with diagnostic output if the command fails.
 func (rnr *Runner) MustGet(args ...string) Result {
-	r, err := rnr.Get(args...)
-	if err != nil {
-		panic(err.Error() + "\n" +
-			"out:" + fmtout(r.Out) +
-			"log:" + fmtout(r.Log) +
-			"code: " + strconv.Itoa(r.Code))
-	}
-	return r
+	return mustv(rnr.Get(args...))
 }
 
 // Close closes the underlying [Commander] if it is an [io.Closer].

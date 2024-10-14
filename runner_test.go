@@ -114,13 +114,13 @@ func ExampleRunner_Get_error() {
 	rnr := sys.Runner()
 
 	// Use busybox ls to normalize output.
-	r, err := rnr.Get("busybox", "ls", "/bad_directory")
+	_, err := rnr.Get("busybox", "ls", "/bad_directory")
 	fmt.Println("err:", err)
-	fmt.Println("log:", r.Log)
-	fmt.Println("code:", r.Code)
 	// Output:
 	// err: exit status 1
-	// log: ls: /bad_directory: No such file or directory
+	// out: <empty>
+	// log:
+	// 	ls: /bad_directory: No such file or directory
 	// code: 1
 }
 
