@@ -3,6 +3,7 @@ package ctr
 import (
 	"context"
 
+	"golang.org/x/term"
 	"lesiw.io/cmdio"
 )
 
@@ -36,9 +37,17 @@ func (c *cmd) Attach() error {
 }
 
 func (c *cmd) setCmd(attach bool) {
-	cmd := []string{"container", "exec", "-i"}
+	cmd := []string{"container", "exec"}
 	if attach {
-		cmd = append(cmd, "-t")
+		if term.IsTerminal(0) {
+			cmd = append(cmd, "-i")
+			if term.IsTerminal(1) {
+				cmd = append(cmd, "-t")
+			}
+		}
+	} else {
+		// Unattached commands should not probe stdin/stdout.
+		cmd = append(cmd, "-i")
 	}
 	for k, v := range c.env {
 		if k == "PWD" {
