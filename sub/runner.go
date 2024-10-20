@@ -26,9 +26,5 @@ func New(cmd ...string) *cmdio.Runner {
 // WithRunner instantiates a [cmdio.Runner] that runs subcommands using the
 // given runner.
 func WithRunner(rnr *cmdio.Runner, cmd ...string) *cmdio.Runner {
-	return cmdio.NewRunner(
-		context.Background(),
-		make(map[string]string),
-		&cdr{rnr, cmd},
-	)
+	return rnr.WithCommander(&cdr{rnr, cmd})
 }

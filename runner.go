@@ -22,6 +22,17 @@ func NewRunner(
 	return &Runner{ctx, env, cdr}
 }
 
+// WithContext creates a new runner with the provided [context.Context].
+// The new runner will have a copy of the parent Runner's env
+// and shares the same commander as its parent.
+func (rnr *Runner) WithContext(ctx context.Context) *Runner {
+	env := make(map[string]string, len(rnr.env))
+	for k, v := range rnr.env {
+		env[k] = v
+	}
+	return &Runner{ctx, env, rnr.Commander}
+}
+
 // WithEnv creates a new runner with the provided env.
 // The new runner will share the same context and commander as its parent.
 //
@@ -37,14 +48,15 @@ func (rnr *Runner) WithEnv(env map[string]string) *Runner {
 	return &Runner{rnr.ctx, env2, rnr.Commander}
 }
 
-// WithContext creates a new runner with the provided [context.Context].
-// The new runner will share the same environment and commander as its parent.
-func (rnr *Runner) WithContext(ctx context.Context) *Runner {
+// WithCommander creates a new runner with the provided [context.Context].
+// The new runner will have a copy of the parent Runner's env
+// and shares the same context as its parent.
+func (rnr *Runner) WithCommander(cdr Commander) *Runner {
 	env := make(map[string]string, len(rnr.env))
 	for k, v := range rnr.env {
 		env[k] = v
 	}
-	return &Runner{ctx, env, rnr.Commander}
+	return &Runner{rnr.ctx, env, cdr}
 }
 
 // Command instantiates a command as an [io.ReadWriter].
