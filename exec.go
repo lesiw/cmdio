@@ -10,7 +10,6 @@ import (
 )
 
 func run(cmd io.Reader) error {
-	fmt.Fprintln(Trace, strings.TrimRight(fmt.Sprintf("%v", cmd), "\n"))
 	a, ok := cmd.(Attacher)
 	if !ok {
 		// If this command does not implement Attacher, stream it to stdout
@@ -18,12 +17,14 @@ func run(cmd io.Reader) error {
 		if l, ok := cmd.(Logger); ok {
 			l.Log(stderr)
 		}
+		fmt.Fprintln(Trace, strings.TrimRight(fmt.Sprintf("%v", cmd), "\n"))
 		_, err := io.Copy(stdout, cmd)
 		return err
 	}
 	if err := a.Attach(); err != nil {
 		return err
 	}
+	fmt.Fprintln(Trace, strings.TrimRight(fmt.Sprintf("%v", cmd), "\n"))
 	_, err := cmd.Read(nil)
 	if err == io.EOF {
 		err = nil
