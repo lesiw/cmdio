@@ -37,13 +37,15 @@ func (c *cdr) Close() error {
 }
 
 // New instantiates a [cmdio.Runner] that runs commands in a container.
-func New(name string) (*cmdio.Runner, error) {
-	return WithRunner(sys.Runner(), name)
+func New(name string, args ...string) (*cmdio.Runner, error) {
+	return WithRunner(sys.Runner(), name, args...)
 }
 
 // WithRunner instantiates a [cmdio.Runner] that runs commands in a container
 // using the given runner.
-func WithRunner(rnr *cmdio.Runner, name string) (*cmdio.Runner, error) {
+func WithRunner(
+	rnr *cmdio.Runner, name string, args ...string,
+) (*cmdio.Runner, error) {
 	var ctrcli []string
 	for _, cli := range clis {
 		if _, err := rnr.Get("which", cli[0]); err == nil {
@@ -62,7 +64,9 @@ func WithRunner(rnr *cmdio.Runner, name string) (*cmdio.Runner, error) {
 			return nil, fmt.Errorf("failed to build container: %w", err)
 		}
 	}
-	r, err := rnr.Get("container", "run", "--rm", "-d", "-i", name, "cat")
+	cmd := []string{"container", "run", "--rm", "-d", "-i"}
+	cmd = append(cmd, args...)
+	r, err := rnr.Get(append(cmd, name, "cat")...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to start container: %w", err)
 	}
