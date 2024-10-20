@@ -8,8 +8,8 @@ import (
 type nopWriter struct{ io.Reader }
 type nopReader struct{ io.Writer }
 
-func (w nopWriter) Write([]byte) (int, error) { return 0, nil }
-func (w nopReader) Read([]byte) (int, error)  { return 0, nil }
+func (nopWriter) Write([]byte) (int, error) { return 0, nil }
+func (nopReader) Read([]byte) (int, error)  { return 0, nil }
 
 // readWriter normalizes (io.Reader | io.Writer) to an io.ReadWriter.
 // If Go supports union types in the future, this function should be removed.
