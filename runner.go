@@ -13,7 +13,7 @@ import (
 type Runner struct {
 	ctx context.Context
 	env map[string]string
-	cmd map[string]Commander
+	cmd map[string]*Runner
 	Commander
 }
 
@@ -63,17 +63,17 @@ func (rnr *Runner) WithCommander(cdr Commander) *Runner {
 	}
 }
 
-// WithCommand creates a new runner with cmd handled by the provided
-// [Commander].
+// WithCommand creates a new Runner with cmd handled by the provided
+// [Runner].
 // The new Runner will otherwise be identical to its parent.
-func (rnr *Runner) WithCommand(cmd string, cdr Commander) *Runner {
-	var cmd2 map[string]Commander
+func (rnr *Runner) WithCommand(cmd string, rnr2 *Runner) *Runner {
+	var cmd2 map[string]*Runner
 	if rnr.cmd == nil {
-		cmd2 = make(map[string]Commander)
+		cmd2 = make(map[string]*Runner)
 	} else {
 		cmd2 = maps.Clone(rnr.cmd)
 	}
-	cmd2[cmd] = cdr
+	cmd2[cmd] = rnr2
 	return &Runner{
 		rnr.ctx,
 		maps.Clone(rnr.env),
@@ -92,8 +92,8 @@ func (rnr *Runner) Command(args ...string) io.ReadWriter {
 		ctx = context.Background()
 	}
 	if len(args) > 0 && rnr.cmd != nil {
-		if cdr, ok := rnr.cmd[args[0]]; ok {
-			return cdr.Command(ctx, rnr.env, args...)
+		if rnr2, ok := rnr.cmd[args[0]]; ok {
+			return rnr2.Command(args...)
 		}
 	}
 	return rnr.Commander.Command(ctx, rnr.env, args...)
