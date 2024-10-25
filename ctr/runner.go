@@ -71,11 +71,9 @@ func WithRunner(
 		return nil, fmt.Errorf("failed to start container: %w", err)
 	}
 
-	return cmdio.NewRunner(
-		context.Background(),
-		make(map[string]string),
-		&cdr{rnr: rnr, ctrid: r.Out},
-	), nil
+	return new(cmdio.Runner).
+		WithContext(context.Background()).
+		WithCommander(&cdr{rnr: rnr, ctrid: r.Out}), nil
 }
 
 func buildContainer(

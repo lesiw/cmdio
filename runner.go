@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"maps"
 	"strings"
 )
 
@@ -12,51 +13,73 @@ import (
 type Runner struct {
 	ctx context.Context
 	env map[string]string
+	cmd map[string]Commander
 	Commander
 }
 
-// NewRunner instantiates a new [Runner].
-func NewRunner(
-	ctx context.Context, env map[string]string, cdr Commander,
-) *Runner {
-	return &Runner{ctx, env, cdr}
-}
-
-// WithContext creates a new runner with the provided [context.Context].
-// The new runner will have a copy of the parent Runner's env
+// WithContext creates a new Runner with the provided [context.Context].
+// The new Runner will have a copy of the parent Runner's env
 // and shares the same commander as its parent.
 func (rnr *Runner) WithContext(ctx context.Context) *Runner {
-	env := make(map[string]string, len(rnr.env))
-	for k, v := range rnr.env {
-		env[k] = v
+	return &Runner{
+		ctx,
+		maps.Clone(rnr.env),
+		maps.Clone(rnr.cmd),
+		rnr.Commander,
 	}
-	return &Runner{ctx, env, rnr.Commander}
 }
 
-// WithEnv creates a new runner with the provided env.
-// The new runner will share the same context and commander as its parent.
+// WithEnv creates a new Runner with the provided env.
+// The new Runner will share the same context and commander as its parent.
 //
 // PWD conventionally sets the working directory.
 func (rnr *Runner) WithEnv(env map[string]string) *Runner {
-	env2 := make(map[string]string, len(rnr.env))
-	for k, v := range rnr.env {
-		env2[k] = v
+	var env2 map[string]string
+	if rnr.env == nil {
+		env2 = make(map[string]string)
+	} else {
+		env2 = maps.Clone(rnr.env)
 	}
 	for k, v := range env {
 		env2[k] = v
 	}
-	return &Runner{rnr.ctx, env2, rnr.Commander}
+	return &Runner{
+		rnr.ctx,
+		env2,
+		maps.Clone(rnr.cmd),
+		rnr.Commander,
+	}
 }
 
-// WithCommander creates a new runner with the provided [context.Context].
-// The new runner will have a copy of the parent Runner's env
+// WithCommander creates a new Runner with the provided [context.Context].
+// The new Runner will have a copy of the parent Runner's env
 // and shares the same context as its parent.
 func (rnr *Runner) WithCommander(cdr Commander) *Runner {
-	env := make(map[string]string, len(rnr.env))
-	for k, v := range rnr.env {
-		env[k] = v
+	return &Runner{
+		rnr.ctx,
+		maps.Clone(rnr.env),
+		maps.Clone(rnr.cmd),
+		cdr,
 	}
-	return &Runner{rnr.ctx, env, cdr}
+}
+
+// WithCommand creates a new runner with cmd handled by the provided
+// [Commander].
+// The new Runner will otherwise be identical to its parent.
+func (rnr *Runner) WithCommand(cmd string, cdr Commander) *Runner {
+	var cmd2 map[string]Commander
+	if rnr.cmd == nil {
+		cmd2 = make(map[string]Commander)
+	} else {
+		cmd2 = maps.Clone(rnr.cmd)
+	}
+	cmd2[cmd] = cdr
+	return &Runner{
+		rnr.ctx,
+		maps.Clone(rnr.env),
+		cmd2,
+		rnr.Commander,
+	}
 }
 
 // Command instantiates a command as an [io.ReadWriter].
@@ -67,6 +90,11 @@ func (rnr *Runner) Command(args ...string) io.ReadWriter {
 	ctx := rnr.ctx
 	if ctx == nil {
 		ctx = context.Background()
+	}
+	if len(args) > 0 && rnr.cmd != nil {
+		if cdr, ok := rnr.cmd[args[0]]; ok {
+			return cdr.Command(ctx, rnr.env, args...)
+		}
 	}
 	return rnr.Commander.Command(ctx, rnr.env, args...)
 }

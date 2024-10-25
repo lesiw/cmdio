@@ -16,9 +16,7 @@ func (cdr) Command(
 
 // Runner instantiates a [cmdio.Runner] that runs commands on the local system.
 func Runner() *cmdio.Runner {
-	return cmdio.NewRunner(
-		context.Background(),
-		make(map[string]string),
-		new(cdr),
-	)
+	return new(cmdio.Runner).
+		WithCommander(new(cdr)).
+		WithContext(context.Background())
 }
