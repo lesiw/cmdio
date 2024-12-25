@@ -93,7 +93,7 @@ func (rnr *Runner) Command(args ...string) io.ReadWriter {
 	}
 	if len(args) > 0 && rnr.cmd != nil {
 		if rnr2, ok := rnr.cmd[args[0]]; ok {
-			return rnr2.Command(args...)
+			return rnr2.WithContext(ctx).WithEnv(rnr.env).Command(args...)
 		}
 	}
 	return rnr.Commander.Command(ctx, rnr.env, args...)

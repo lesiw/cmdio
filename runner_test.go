@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"lesiw.io/cmdio"
+	"lesiw.io/cmdio/sub"
 	"lesiw.io/cmdio/sys"
 	"lesiw.io/prefix"
 )
@@ -203,4 +204,35 @@ func ExampleRunner_WithEnv_pwd() {
 	// + PWD=/tmp/cmdio_dir_test pwd
 	// /tmp/cmdio_dir_test
 	// + rm -r /tmp/cmdio_dir_test
+}
+
+func ExampleRunner_WithCommand() {
+	rnr := sys.Runner()
+	box := sub.WithRunner(rnr, "busybox")
+	rnr = rnr.WithCommand("dos2unix", box)
+	rnr = rnr.WithCommand("unix2dos", box)
+	r, err := cmdio.GetPipe(
+		rnr.Command("printf", "hello\r\nworld\r\n"),
+		rnr.Command("dos2unix"),
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(r.Out)
+	// Output:
+	// hello
+	// world
+}
+
+func ExampleRunner_WithCommand_env() {
+	rnr := sys.Runner()
+	box := sub.WithRunner(rnr, "busybox")
+	rnr = rnr.WithCommand("sh", box)
+	err := rnr.WithEnv(map[string]string{"PKGNAME": "cmdio"}).
+		Run("sh", "-c", `echo "hello from $PKGNAME"`)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// Output:
+	// hello from cmdio
 }
