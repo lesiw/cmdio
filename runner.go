@@ -51,7 +51,7 @@ func (rnr *Runner) WithEnv(env map[string]string) *Runner {
 	}
 }
 
-// WithCommander creates a new Runner with the provided [context.Context].
+// WithCommander creates a new Runner with the provided [Commander].
 // The new Runner will have a copy of the parent Runner's env
 // and shares the same context as its parent.
 func (rnr *Runner) WithCommander(cdr Commander) *Runner {
