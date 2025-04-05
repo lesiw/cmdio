@@ -16,7 +16,7 @@ import (
 )
 
 type cmd struct {
-	cmdio.NopCommand
+	cmdio.Command
 
 	ctx  context.Context
 	cmd  *exec.Cmd

@@ -87,19 +87,6 @@ type Command interface {
 	Logger
 }
 
-// A [NopCommand] is an empty [Command] implementation. It is useful for
-// embedding in command implementations that may not choose to implement
-// optional interfaces.
-type NopCommand struct{}
-
-func (NopCommand) Read([]byte) (int, error)  { return 0, nil }
-func (NopCommand) Write([]byte) (int, error) { return 0, nil }
-func (NopCommand) Close() error              { return nil }
-func (NopCommand) String() string            { return "<nop>" }
-func (NopCommand) Attach() error             { return nil }
-func (NopCommand) Code() int                 { return 0 }
-func (NopCommand) Log(io.Writer)             {}
-
 // Trace is an [io.Writer] to which command tracing information is written.
 // To disable tracing, set this variable to [io.Discard].
 var Trace io.Writer = prefix.NewWriter("+ ", stderr)
