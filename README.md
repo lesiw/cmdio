@@ -1,5 +1,4 @@
 # lesiw.io/cmdio
 
-[![Go Reference](https://pkg.go.dev/badge/lesiw.io/cmdio.svg)](https://pkg.go.dev/lesiw.io/cmdio)
-
-Package cmdio provides portable interfaces for commands and command runners.
+**Deprecated.** Use [lesiw.io/command](https://pkg.go.dev/lesiw.io/command)
+and command buffers ([cmdbuf.io](https://cmdbuf.io)) instead.
